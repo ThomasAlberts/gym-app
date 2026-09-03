@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 
@@ -6,6 +6,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [workouts, setWorkouts] = useState([]);
   const [allExercises, setAllExercises] = useState([]);
+  const [definitions, setDefinitions] = useState([]);
   const [recentExercises, setRecentExercises] = useState([]);
   const [days, setDays] = useState(7);
   const [loading, setLoading] = useState(true);
@@ -15,12 +16,14 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const [workoutsRes, allExRes, recentExRes] = await Promise.all([
+      const [workoutsRes, allExRes, defsRes] = await Promise.all([
         api.get("/workout/all"),
         api.get("/exercise_info/exercise/all"),
+        api.get("/exercise_info/exercise_defintion/all"),
       ]);
       setWorkouts(workoutsRes.data);
       setAllExercises(allExRes.data);
+      setDefinitions(defsRes.data || []);
     } catch (e) {
       console.error(e);
       setError("Could not load dashboard data.");
@@ -38,6 +41,15 @@ export default function Dashboard() {
     setDays(value);
     loadAll(value);
   };
+
+  const definitionById = useMemo(() => {
+    const map = new Map();
+    definitions.forEach((d) => map.set(d.id, d));
+    return map;
+  }, [definitions]);
+
+  const getExerciseName = (ex) =>
+    definitionById.get(ex.exercise_definition_id)?.name || `#${ex.exercise_definition_id}`;
 
   // A single set's contribution to total weight lifted.
   // Assumes each set object has `weight` and `reps` fields; falls back
@@ -102,35 +114,36 @@ export default function Dashboard() {
 
       <section>
         <h3>All exercises ({allExercises.length})</h3>
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
-          <thead>
-            <tr>
-              <th style={thStyle}>Date</th>
-              <th style={thStyle}>Exercise def. ID</th>
-              <th style={thStyle}>Sets</th>
-              <th style={thStyle}>Total Weight</th>
-              <th style={thStyle}>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allExercises.map((ex) => {
-              const { totalSets, totalWeight } = getExerciseTotals(ex);
-              return (
-                <tr key={ex.id}>
-                  <td style={tdStyle}>{new Date(ex.workout_started_at).toLocaleDateString()}</td>
-                  <td style={tdStyle}>{ex.exercise_definition_id}</td>
-                  <td style={tdStyle}>{totalSets}</td>
-                  <td style={tdStyle}>{totalWeight.toLocaleString()} kg</td>
-                  <td style={tdStyle}>{ex.notes || "—"}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+          {allExercises.map((ex) => {
+            const { totalSets, totalWeight } = getExerciseTotals(ex);
+            return (
+              <li key={ex.id} style={{ border: "1px solid #eee", padding: 8, borderRadius: 4 }}>
+                <div>
+                  <strong>{getExerciseName(ex)}</strong>{" "}
+                  <span style={{ fontSize: 12, color: "#888" }}>
+                    —{" "}
+                    {new Date(ex.workout_started_at).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "2-digit",
+                    })}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+                  {totalSets} set{totalSets === 1 ? "" : "s"} — {totalWeight.toLocaleString()} kg total weight
+                </div>
+                {ex.notes && (
+                  <div style={{ fontSize: 12, marginTop: 2 }}>
+                    <em>Note: {ex.notes}</em>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+          {allExercises.length === 0 && <p>No exercises yet.</p>}
+        </ul>
       </section>
     </div>
   );
 }
-
-const thStyle = { textAlign: "left", borderBottom: "1px solid #ccc", padding: 4 };
-const tdStyle = { borderBottom: "1px solid #eee", padding: 4 };
