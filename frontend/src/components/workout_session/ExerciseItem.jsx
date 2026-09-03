@@ -11,6 +11,7 @@ export default function ExerciseItem({
   onDelete,
   isActive = true,
   onFocus,
+  currentWorkoutId
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(exercise.name);
@@ -114,7 +115,7 @@ export default function ExerciseItem({
         </>
       )}
 
-      <PreviousInfo exerciseDefinitionId={exercise.exercise_definition_id} days={LOOKBACK_DAYS} />
+      <PreviousInfo exerciseDefinitionId={exercise.exercise_definition_id} currentWorkoutId={currentWorkoutId} />
 
       <h4>Sets:</h4>
       <SetList sets={exercise.exercise_sets || []} onChange={updateSets} />

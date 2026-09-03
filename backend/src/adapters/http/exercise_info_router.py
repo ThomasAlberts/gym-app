@@ -53,18 +53,18 @@ def get_recent_exercises(
 
 
 @router.get(
-    "/exercise/last/{exercise_definition_id}",
-    response_model=Optional[ExerciseWithWorkoutResponse],
+    "/exercise/last/{exercise_definition_id}/history",
+    response_model=List[ExerciseWithWorkoutResponse],
 )
-def get_last_exercise_for_definition(
+def get_last_exercises_for_definition(
     exercise_definition_id: int,
     days: int = Query(90, ge=1, le=365),
+    exclude_workout_id: Optional[int] = Query(None),
+    limit: int = Query(3, ge=1, le=10),
     session: Session = Depends(get_database),
     user: User = Depends(get_current_user),
 ):
-    exercise = ExerciseInfoService(session).get_last_exercise_for_definition(
-        user.id, exercise_definition_id, days
+    exercises = ExerciseInfoService(session).get_last_exercises_for_definition(
+        user.id, exercise_definition_id, days, exclude_workout_id, limit
     )
-    if exercise is None:
-        return None
-    return _to_response(exercise)
+    return [_to_response(ex) for ex in exercises]

@@ -1,21 +1,36 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axios";
 
-const DEFAULT_LOOKBACK_DAYS = 30;
+const DEFAULT_LOOKBACK_DAYS = 90;
+const DEFAULT_LIMIT = 3;
 
 const daysAgo = (isoString) => {
   if (!isoString) return null;
   return Math.floor((Date.now() - new Date(isoString).getTime()) / (1000 * 60 * 60 * 24));
 };
 
-export default function PreviousInfo({ exerciseDefinitionId, days = DEFAULT_LOOKBACK_DAYS }) {
-  const [previous, setPrevious] = useState(null);
+const formatSetsLine = (exercise_sets) =>
+  (exercise_sets || [])
+    .map((s) => {
+      const repsPart = s.reps != null ? `${s.reps}` : "—";
+      const weightPart = s.weight != null ? ` x ${s.weight}` : "";
+      return `${repsPart}${weightPart}`;
+    })
+    .join(", ");
+
+export default function PreviousInfo({
+  exerciseDefinitionId,
+  currentWorkoutId, // id of the workout currently being logged, excluded from results
+  days = DEFAULT_LOOKBACK_DAYS,
+  limit = DEFAULT_LIMIT,
+}) {
+  const [previous, setPrevious] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!exerciseDefinitionId) {
-      setPrevious(null);
+      setPrevious([]);
       setError(null);
       return;
     }
@@ -27,10 +42,25 @@ export default function PreviousInfo({ exerciseDefinitionId, days = DEFAULT_LOOK
       setError(null);
       try {
         const res = await api.get(
-          `/exercise_info/exercise/last/${exerciseDefinitionId}`,
-          { params: { days } }
+          `/exercise_info/exercise/last/${exerciseDefinitionId}/history`,
+          {
+            params: {
+              days,
+              limit,
+              exclude_workout_id: currentWorkoutId || undefined,
+            },
+          }
         );
-        if (!cancelled) setPrevious(res.data || null);
+        let data = Array.isArray(res.data) ? res.data : [];
+
+        // Safety net in case backend doesn't filter (or currentWorkoutId arrives late)
+        if (currentWorkoutId != null) {
+          data = data.filter(
+            (d) => String(d.workout_id) !== String(currentWorkoutId)
+          );
+        }
+
+        if (!cancelled) setPrevious(data.slice(0, limit));
       } catch (e) {
         console.error(e);
         if (!cancelled) setError("Couldn't load previous performance.");
@@ -43,7 +73,7 @@ export default function PreviousInfo({ exerciseDefinitionId, days = DEFAULT_LOOK
     return () => {
       cancelled = true;
     };
-  }, [exerciseDefinitionId, days]);
+  }, [exerciseDefinitionId, currentWorkoutId, days, limit]);
 
   if (!exerciseDefinitionId) return null;
 
@@ -55,22 +85,13 @@ export default function PreviousInfo({ exerciseDefinitionId, days = DEFAULT_LOOK
     return <div style={{ fontSize: 12, color: "crimson", marginTop: 8 }}>{error}</div>;
   }
 
-  if (!previous) {
+  if (previous.length === 0) {
     return (
       <div style={{ fontSize: 12, color: "#888", marginTop: 8 }}>
         No record of this exercise in the last {days} days.
       </div>
     );
   }
-
-  // Build one-line sets string, e.g. "10 reps @ 20, 8 reps @ 22.5"
-  const setsLine = (previous.exercise_sets || [])
-    .map((s) => {
-      const repsPart = s.reps != null ? `${s.reps}` : "—";
-      const weightPart = s.weight != null ? ` x ${s.weight}` : "";
-      return `${repsPart}${weightPart}`;
-    })
-    .join(", ");
 
   return (
     <div
@@ -83,18 +104,23 @@ export default function PreviousInfo({ exerciseDefinitionId, days = DEFAULT_LOOK
         marginTop: 8,
       }}
     >
-      <div>
-        {previous.workout_started_at && (
-          <span style={{ color: "#888" }}> ({daysAgo(previous.workout_started_at)} days ago)</span>
-        )}
-        : {setsLine}
-      </div>
-      
-      {previous.notes && (
-        <div style={{ marginTop: 4 }}>
-          <em>Note: {previous.notes}</em>
+      {previous.map((entry, i) => (
+        <div key={entry.id ?? i} style={{ marginTop: i === 0 ? 0 : 6 }}>
+          <div>
+            {entry.workout_started_at && (
+              <span style={{ color: "#888" }}>
+                ({daysAgo(entry.workout_started_at)} days ago)
+              </span>
+            )}
+            : {formatSetsLine(entry.exercise_sets)}
+          </div>
+          {entry.notes && (
+            <div style={{ marginTop: 2 }}>
+              <em>Note: {entry.notes}</em>
+            </div>
+          )}
         </div>
-      )}
+      ))}
     </div>
   );
 }

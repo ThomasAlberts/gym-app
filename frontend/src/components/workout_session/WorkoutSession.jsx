@@ -98,6 +98,7 @@ export default function WorkoutSession() {
         activeExerciseId={activeExerciseId}
         onFocusExercise={setActiveExerciseId}
         onChange={updateExercises}
+        currentWorkoutId={session.workoutId}
       />
 
       <AddExerciseForm
@@ -105,6 +106,7 @@ export default function WorkoutSession() {
           updateExercises([...session.exercises, exercise]);
           setActiveExerciseId(exercise.id);
         }}
+        currentWorkoutId={session.workoutId}
       />
     </div>
   );

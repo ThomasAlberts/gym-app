@@ -4,7 +4,7 @@ import PreviousInfo from "./PreviousInfo";
 
 const LOOKBACK_DAYS = 90; // how far back to search for a previous instance
 
-export default function AddExerciseForm({ onAdd }) {
+export default function AddExerciseForm({ onAdd, currentWorkoutId }) {
   const [name, setName] = useState("");
   const [equipment, setEquipment] = useState("barbell");
   const [handle, setHandle] = useState("none");
@@ -108,8 +108,7 @@ export default function AddExerciseForm({ onAdd }) {
           {definitions.length} known exercises loaded — start typing a name to match one, or enter a new exercise.
         </span>
       )}
-
-      <PreviousInfo exerciseDefinitionId={selectedDefinitionId} days={LOOKBACK_DAYS} />
+      <PreviousInfo exerciseDefinitionId={selectedDefinitionId} currentWorkoutId={currentWorkoutId} />
     </div>
   );
 }
