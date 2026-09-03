@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    volumes:
+      - .:/app
+      # Anonymous volume masks the host's backend/.venv (Windows binaries)
+      # so the Linux venv built inside the image is used instead.
+      - /app/backend/.venv
+    ports:
+      - "8000:8000"
+    env_file:
+      - backend/.env
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+      # Anonymous volume masks the host's node_modules so the container's
+      # own install (with correct native bindings) is used instead.
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend

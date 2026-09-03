@@ -17,11 +17,12 @@ run audit --> run audit fix
 
 npm run dev
 
-
+fixed
 - session time is +2 van echte time
 - componenten aangepast en code front-end opgeschoond
 - last time moet horizontaal, laatste 3x 
 
+nu
 - niet de huidige exercise tonen tijdens het zoeken, of niet de exercise tonen in de exercise als voorgaande
 - Bij all exercises opschrijven naam van oefening
 - dockerisering van de front/back

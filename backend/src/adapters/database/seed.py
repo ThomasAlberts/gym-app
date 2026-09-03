@@ -6,6 +6,7 @@ from backend.src.domain.exercise_definition import ExerciseDefinition
 from backend.src.domain.exercise_muscle_link import ExerciseMuscleLink
 from backend.src.domain.enums import MovementPattern, AngleType, GripType, EquipmentType, Muscle
 
+## db fill todo: move use real db
 
 def _movements():
     return [
