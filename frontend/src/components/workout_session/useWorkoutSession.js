@@ -7,6 +7,34 @@ const parseServerDate = (value) => {
   return new Date(hasTimezone ? value : `${value}Z`).getTime();
 };
 
+const draftKey = (workoutId) => `workout_draft_${workoutId}`;
+
+const loadDraft = (workoutId) => {
+  try {
+    const raw = localStorage.getItem(draftKey(workoutId));
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.error("Couldn't read draft from localStorage", e);
+    return null;
+  }
+};
+
+const saveDraft = (workoutId, session) => {
+  try {
+    localStorage.setItem(draftKey(workoutId), JSON.stringify(session));
+  } catch (e) {
+    console.error("Couldn't write draft to localStorage", e);
+  }
+};
+
+const clearDraft = (workoutId) => {
+  try {
+    localStorage.removeItem(draftKey(workoutId));
+  } catch (e) {
+    console.error("Couldn't clear draft from localStorage", e);
+  }
+};
+
 const shapeSession = (data, defsById) => {
   const exercises = (data.exercises || []).map((ex) => {
     const def = defsById.get(ex.exercise_definition_id);
@@ -59,6 +87,16 @@ export default function useWorkoutSession(workoutId) {
     const load = async () => {
       setLoading(true);
       setLoadError(null);
+
+      // 1. Check for a local draft first — this is what survives a refresh.
+      const draft = loadDraft(workoutId);
+      if (draft && !cancelled) {
+        setSession(draft);
+        setLoading(false);
+        return; // trust the draft; don't overwrite with server state
+      }
+
+      // 2. No draft — fetch fresh from the server as before.
       try {
         const [{ data }, defsRes] = await Promise.all([
           api.get(`/workout/${workoutId}`),
@@ -67,7 +105,9 @@ export default function useWorkoutSession(workoutId) {
         if (cancelled) return;
 
         const defsById = new Map((defsRes.data || []).map((d) => [d.id, d]));
-        setSession(shapeSession(data, defsById));
+        const shaped = shapeSession(data, defsById);
+        setSession(shaped);
+        saveDraft(workoutId, shaped);
       } catch (e) {
         console.error(e);
         if (!cancelled) setLoadError(e);
@@ -81,6 +121,11 @@ export default function useWorkoutSession(workoutId) {
       cancelled = true;
     };
   }, [workoutId]);
+
+  // Keep localStorage in sync with every in-memory change — cheap, local, no network.
+  useEffect(() => {
+    if (session) saveDraft(session.workoutId, session);
+  }, [session]);
 
   const persist = useCallback(
     async (isFinal) => {
@@ -104,10 +149,15 @@ export default function useWorkoutSession(workoutId) {
     });
   }, []);
 
-  const saveWorkout = useCallback(() => persist(true), [persist]);
+  const saveWorkout = useCallback(async () => {
+    const result = await persist(true);
+    clearDraft(session.workoutId); // workout is finalized — draft no longer needed
+    return result;
+  }, [persist, session]);
 
   const deleteWorkout = useCallback(async () => {
     await api.delete(`/workout/${session.workoutId}`);
+    clearDraft(session.workoutId);
   }, [session]);
 
   const updateName = useCallback((name) => {
