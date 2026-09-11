@@ -4,6 +4,7 @@ import useWorkoutSession from "./useWorkoutSession";
 import ExerciseList from "./ExerciseList";
 import AddExerciseForm from "./AddExerciseForm";
 import WorkoutTimer from "./WorkoutTimer";
+import SuggestExercise from "./SuggestExercise.jsx";
 
 export default function WorkoutSession() {
   const { workoutId } = useParams();
@@ -107,6 +108,13 @@ export default function WorkoutSession() {
           setActiveExerciseId(exercise.id);
         }}
         currentWorkoutId={session.workoutId}
+      />
+      <SuggestExercise
+        exercises={session.exercises}
+        onAdd={(exercise) => {
+          updateExercises([...session.exercises, exercise]);
+          setActiveExerciseId(exercise.id);
+        }}
       />
     </div>
   );
