@@ -1,0 +1,16 @@
+services:
+  backend:
+    image: ghcr.io/thomasalberts/gym-app/backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: ghcr.io/thomasalberts/gym-app/frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
