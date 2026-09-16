@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+    test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +15,13 @@ jobs:
           python-version: "3.14"
       - run: pip install uv
       - run: cd backend && uv sync --frozen
-      - run: cd backend && uv run pytest
+      - name: Run tests
+        working-directory: backend
+        run: uv run pytest
+        env:
+          DATABASE_URL: "sqlite:///./test.db"
+          JWT_SECRET: "test-secret-not-real"
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
   build-backend:
     needs: test
