@@ -29,36 +29,57 @@ def _exercise_definitions():
 
 def _exercise_muscle_links():
     links = []
+
+    # Exercise 1: squat-pattern lift.
+    # Quads and glutes are both prime movers in a squat; hamstrings assist
+    # the hip extension; abs are stabilizing, not driving the movement.
     links.extend([
-        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.GLUTES, emphasis=1.5),
-        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.QUADS, emphasis=1.5),
-        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.HAMSTRINGS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.ABS, emphasis=0.8),
+        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.GLUTES, emphasis=1.0),
+        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.QUADS, emphasis=1.0),
+        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.HAMSTRINGS, emphasis=0.5),
+        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.ABS, emphasis=0.25),
     ])
+
+    # Exercise 2: overhead/shoulder press.
+    # Front delts are the target; triceps and upper chest assist the press;
+    # rear delts only stabilize the shoulder blade, minor role.
     links.extend([
-        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.FRONT_DELTS, emphasis=1.4),
-        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.TRICEPS, emphasis=1.2),
-        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.CHEST_UPPER, emphasis=0.9),
-        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.REAR_DELTS, emphasis=0.7),
+        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.FRONT_DELTS, emphasis=1.0),
+        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.TRICEPS, emphasis=0.5),
+        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.CHEST_UPPER, emphasis=0.5),
+        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.REAR_DELTS, emphasis=0.25),
     ])
+
+    # Exercise 3: flat bench press.
+    # Mid chest is the target; triceps and front delts assist the press;
+    # upper chest gets minor spillover from a flat (non-incline) angle.
     links.extend([
-        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.CHEST_MID, emphasis=1.5),
-        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.TRICEPS, emphasis=1.3),
-        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.FRONT_DELTS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.CHEST_UPPER, emphasis=0.8),
+        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.CHEST_MID, emphasis=1.0),
+        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.TRICEPS, emphasis=0.5),
+        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.FRONT_DELTS, emphasis=0.5),
+        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.CHEST_UPPER, emphasis=0.25),
     ])
+
+    # Exercise 4: incline press.
+    # Upper chest is the target; front delts and triceps assist; mid chest
+    # gets minor spillover from the incline angle.
     links.extend([
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.CHEST_UPPER, emphasis=1.5),
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.FRONT_DELTS, emphasis=1.3),
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.TRICEPS, emphasis=1.1),
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.CHEST_MID, emphasis=0.8),
+        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.CHEST_UPPER, emphasis=1.0),
+        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.FRONT_DELTS, emphasis=0.5),
+        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.TRICEPS, emphasis=0.5),
+        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.CHEST_MID, emphasis=0.25),
     ])
+
+    # Exercise 5: row/pulldown pattern.
+    # Lats are the target; rhomboids and biceps assist the pull; rear delts
+    # only stabilize, minor role.
     links.extend([
-        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.LATS, emphasis=1.5),
-        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.RHOMBOIDS, emphasis=1.2),
-        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.BICEPS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.REAR_DELTS, emphasis=0.8),
+        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.LATS, emphasis=1.0),
+        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.RHOMBOIDS, emphasis=0.5),
+        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.BICEPS, emphasis=0.5),
+        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.REAR_DELTS, emphasis=0.25),
     ])
+
     return links
 
 

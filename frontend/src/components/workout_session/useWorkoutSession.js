@@ -100,7 +100,7 @@ export default function useWorkoutSession(workoutId) {
       try {
         const [{ data }, defsRes] = await Promise.all([
           api.get(`/workout/${workoutId}`),
-          api.get(`/exercise_info/exercise_defintion/all`),
+          api.get(`/exercise_info/exercise_definition/all`),
         ]);
         if (cancelled) return;
 

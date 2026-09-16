@@ -21,7 +21,7 @@ export default function AddExerciseForm({ onAdd, currentWorkoutId }) {
       setLoadingDefs(true);
       setDefsError(null);
       try {
-        const res = await api.get(`/exercise_info/exercise_defintion/all`);
+        const res = await api.get(`/exercise_info/exercise_definition/all`);
         if (!cancelled) setDefinitions(res.data || []);
       } catch (e) {
         console.error(e);

@@ -6,6 +6,7 @@ import Profile from "./pages/Profile";
 import CreateWorkout from "./pages/Workout";
 import Dashboard from "./pages/Dashboard";
 import WorkoutSession from "./components/workout_session/WorkoutSession.jsx";
+import MuscleMap from "./components/muscle_map/MuscleMap.jsx";
 // Eventueel: Login als aparte pagina als je dat wilt
 
 function AppInner() {
@@ -17,6 +18,7 @@ function AppInner() {
         <Route path="/workout" element={<CreateWorkout />} />
         <Route path="/workout/:workoutId" element={<WorkoutSession />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/muscle_map" element={<MuscleMap />} />
 
         <Route path="/" element={<Navigate to="/workout" replace />} />
       </Routes>

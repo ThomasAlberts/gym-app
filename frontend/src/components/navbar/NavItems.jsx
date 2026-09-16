@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { label: "Profile", path: "/profile", roles: ["user", "coach", "admin"] },
   { label: "Workout", path: "/workout", roles: ["user", "coach", "admin"] },
   { label: "Dashboard", path: "/dashboard", roles: ["user", "coach", "admin"] },
+  { label: "Muscle map", path: "/muscle_map", roles: ["user", "coach", "admin"] },
   { label: "Admin Panel", path: "/admin", roles: ["admin"] },
 ];
 

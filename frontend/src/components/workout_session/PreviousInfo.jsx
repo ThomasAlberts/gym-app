@@ -41,31 +41,47 @@ export default function PreviousInfo({
       setLoading(true);
       setError(null);
       try {
-        const res = await api.get(
-          `/exercise_info/exercise/last/${exerciseDefinitionId}/history`,
+        const response = await api.get(
+          `/exercise_info/exercise/history/${exerciseDefinitionId}`,
           {
             params: {
-              days,
               limit,
-              exclude_workout_id: currentWorkoutId || undefined,
+              exclude_workout_session_id:
+                currentWorkoutId || undefined,
             },
           }
         );
-        let data = Array.isArray(res.data) ? res.data : [];
 
-        // Safety net in case backend doesn't filter (or currentWorkoutId arrives late)
+        let data = Array.isArray(response.data)
+          ? response.data
+          : [];
+
         if (currentWorkoutId != null) {
           data = data.filter(
-            (d) => String(d.workout_id) !== String(currentWorkoutId)
+            (item) =>
+              String(item.workout_id)
+              !== String(currentWorkoutId)
           );
         }
 
-        if (!cancelled) setPrevious(data.slice(0, limit));
-      } catch (e) {
-        console.error(e);
-        if (!cancelled) setError("Couldn't load previous performance.");
+        if (!cancelled) {
+          setPrevious(data.slice(0, limit));
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load previous performance:",
+          error
+        );
+
+        if (!cancelled) {
+          setError(
+            "Couldn't load previous performance."
+          );
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 

@@ -1,6 +1,7 @@
 from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
 
+from backend.src.adapters.response.workout_response import ExerciseWithWorkoutResponse
 from backend.src.domain.enums import EquipmentType, GripType, AngleType
 
 class ExerciseDefinitionResponse(BaseModel):
@@ -12,3 +13,14 @@ class ExerciseDefinitionResponse(BaseModel):
     angle: Optional["AngleType"] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ExerciseMuscleLinkResponse(BaseModel):
+    muscle: str
+    emphasis: float
+
+
+class ExercisesSinceMondayResponse(BaseModel):
+    exercises: list[ExerciseWithWorkoutResponse]
+    muscle_links: dict[int, list[ExerciseMuscleLinkResponse]]
+    muscle_strain: dict[str, float]
