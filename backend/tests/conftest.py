@@ -21,7 +21,7 @@ from backend.main import app
 
 
 # ── 1. In-memory SQLite engine ─────────────────────────────
-@pytest.fixture(scope="session")
+@pytest.fixture
 def test_engine():
     engine = create_engine(
         "sqlite://",
