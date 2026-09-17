@@ -6,7 +6,7 @@ import Profile from "./pages/Profile";
 import CreateWorkout from "./pages/Workout";
 import Dashboard from "./pages/Dashboard";
 import WorkoutSession from "./components/workout_session/WorkoutSession.jsx";
-import MuscleMap from "./components/muscle_map/MuscleMap.jsx";
+import MuscleMap from "./pages/MuscleMap.jsx";
 // Eventueel: Login als aparte pagina als je dat wilt
 
 function AppInner() {

@@ -9,15 +9,15 @@
 // computeMuscleStrain used to produce, so everything downstream (panel
 // aggregation, hover breakdown) is unchanged.
 
-import { useState, useEffect, useMemo } from "react";
-import api from "../../api/axios";
-import BodyDiagram, { MUSCLE_GROUPS, STRAIN_LEVELS, strainLevel } from "./BodyDiagram";
+import { useState, useEffect, useMemo, useRef } from "react";
+import api from "../api/axios.js";
+import BodyDiagram, { MUSCLE_GROUPS, STRAIN_LEVELS, strainLevel } from "../components/muscle_map/BodyDiagram.jsx";
 
 // Maps each backend Muscle enum value (backend/src/domain/enums.py) to the
 // diagram panel it's drawn on. Most muscles map 1:1 to their own panel;
-// chest/shoulders/back have more than one entry here, which is what makes
-// those panels "expandable" — hovering them on the diagram reveals the
-// individual sub-muscles in the breakdown list below.
+// chest/shoulders/back/traps have more than one entry here, which is what
+// makes those panels "expandable" — hovering them on the diagram reveals
+// the individual sub-muscles in the breakdown list below.
 const GROUP_OF = {
   chest_upper: "chest",
   chest_mid: "chest",
@@ -33,9 +33,13 @@ const GROUP_OF = {
   abs: "abs",
   obliques: "obliques",
   traps: "traps",
+  upper_traps: "traps",
+  mid_traps: "traps",
   lower_back: "lower_back",
+  hip_flexors: "hip_flexors",
   glutes: "glutes",
   quads: "quads",
+  adductors: "adductors",
   hamstrings: "hamstrings",
   calves: "calves",
 };
@@ -58,6 +62,9 @@ const LEAF_LABEL = {
   rear_delts: "Rear delts",
   lats: "Lats",
   rhomboids: "Rhomboids",
+  traps: "Traps (general)",
+  upper_traps: "Traps (upper)",
+  mid_traps: "Traps (mid)",
 };
 
 // Weekly volume limit per LEAF muscle, in fractional "sets" (see
@@ -87,10 +94,18 @@ const LEAF_LIMITS = {
   forearms: 12,
   abs: 16,
   obliques: 12,
-  traps: 12,
+  // Traps is split into three leaves because exercises hit it differently:
+  // shrugs/carries load it generically, presses bias the upper fibers,
+  // and rows bias the mid fibers. Limits are lower per-leaf than a single
+  // combined 12-14 would be, since each is only ever a partial hit.
+  traps: 6,
+  upper_traps: 8,
+  mid_traps: 8,
   lower_back: 10,
+  hip_flexors: 8,
   glutes: 16,
   quads: 18,
+  adductors: 10,
   hamstrings: 14,
   calves: 14,
 };
@@ -129,6 +144,8 @@ export default function MuscleMap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hoveredGroup, setHoveredGroup] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const rowRefs = useRef({});
 
   useEffect(() => {
     let cancelled = false;
@@ -167,6 +184,29 @@ export default function MuscleMap() {
     }).sort((a, b) => b.ratio - a.ratio || b.value - a.value);
   }, [strain]);
 
+  // Per-leaf info (label/value/limit) handed to BodyDiagram so it can draw
+  // the on-hover breakdown dropdown itself, without needing to know
+  // anything about the backend Muscle enum.
+  const leafInfo = useMemo(() => {
+    const info = {};
+    Object.keys(GROUP_OF).forEach((leaf) => {
+      info[leaf] = {
+        label: LEAF_LABEL[leaf] || leaf,
+        value: leafStrain[leaf] || 0,
+        limit: LEAF_LIMITS[leaf] || 0,
+      };
+    });
+    return info;
+  }, [leafStrain]);
+
+  // Clicking a panel on the diagram pins a selection; scroll the matching
+  // row in the breakdown list into view so the highlight is actually seen.
+  useEffect(() => {
+    if (selectedGroup && rowRefs.current[selectedGroup]) {
+      rowRefs.current[selectedGroup].scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedGroup]);
+
   const sinceLabel = since.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 
   return (
@@ -188,34 +228,58 @@ export default function MuscleMap() {
             <p style={{ ...styles.statusText, color: "#B23A31" }}>{error}</p>
           </div>
         ) : (
-          <>
-            <div style={styles.diagramWrap}>
-              <div style={styles.diagramItem}>
-                <BodyDiagram view="front" values={strain} limits={DEFAULT_LIMITS} onHoverMuscle={setHoveredGroup} />
-              </div>
-              <div style={styles.diagramItem}>
-                <BodyDiagram view="back" values={strain} limits={DEFAULT_LIMITS} onHoverMuscle={setHoveredGroup} />
-              </div>
-            </div>
-
-            <div style={styles.legend}>
-              {STRAIN_LEVELS.map(({ id, label, color }) => (
-                <div key={id} style={styles.legendItem}>
-                  <span style={{ ...styles.legendDot, background: color }} />
-                  <span style={styles.legendLabel}>{label}</span>
+          <div style={styles.mainRow}>
+            <div style={styles.diagramsCol}>
+              <div style={styles.diagramWrap}>
+                <div style={styles.diagramItem}>
+                  <BodyDiagram
+                    view="front"
+                    values={strain}
+                    limits={DEFAULT_LIMITS}
+                    onHoverMuscle={setHoveredGroup}
+                    selectedId={selectedGroup}
+                    onSelectMuscle={setSelectedGroup}
+                    leavesOf={LEAVES_OF_GROUP}
+                    leafInfo={leafInfo}
+                  />
                 </div>
-              ))}
+                <div style={styles.diagramItem}>
+                  <BodyDiagram
+                    view="back"
+                    values={strain}
+                    limits={DEFAULT_LIMITS}
+                    onHoverMuscle={setHoveredGroup}
+                    selectedId={selectedGroup}
+                    onSelectMuscle={setSelectedGroup}
+                    leavesOf={LEAVES_OF_GROUP}
+                    leafInfo={leafInfo}
+                  />
+                </div>
+              </div>
+
+              <div style={styles.legend}>
+                {STRAIN_LEVELS.map(({ id, label, color }) => (
+                  <div key={id} style={styles.legendItem}>
+                    <span style={{ ...styles.legendDot, background: color }} />
+                    <span style={styles.legendLabel}>{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div style={styles.breakdown}>
+            <div style={styles.breakdownCol}>
               <h3 style={styles.breakdownTitle}>Breakdown by muscle</h3>
               <ul style={styles.rowList}>
                 {rows.map(({ id, label, value, limit, ratio, level }) => {
                   const leaves = LEAVES_OF_GROUP[id] || [];
-                  const expanded = hoveredGroup === id && leaves.length > 1;
+                  const isSelected = selectedGroup === id;
+                  const expanded = (hoveredGroup === id || isSelected) && leaves.length > 1;
                   return (
-                    <li key={id}>
-                      <div style={styles.row}>
+                    <li key={id} ref={(el) => (rowRefs.current[id] = el)}>
+                      <div
+                        style={{ ...styles.row, ...(isSelected ? styles.rowSelected : null) }}
+                        onClick={() => setSelectedGroup((current) => (current === id ? null : id))}
+                      >
                         <span style={styles.rowLabel}>{label}</span>
                         <span style={styles.barTrack}>
                           <span
@@ -264,7 +328,7 @@ export default function MuscleMap() {
                 })}
               </ul>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
@@ -276,15 +340,18 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     padding: "24px 16px",
-    background: "#FFFFFF",
+    background: "#FAF7F1",
+    minHeight: "100vh",
+    boxSizing: "border-box",
   },
   card: {
     width: "100%",
-    maxWidth: 640,
+    maxWidth: 920,
     background: "#FFFFFF",
-    border: "1px solid #E9E9E9",
-    borderRadius: 14,
-    padding: "22px 22px 26px",
+    border: "1px solid #ECE6DA",
+    borderRadius: 16,
+    boxShadow: "0 1px 2px rgba(36,30,23,0.04), 0 10px 30px rgba(36,30,23,0.06)",
+    padding: "26px 28px 30px",
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
   header: {
@@ -292,11 +359,11 @@ const styles = {
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12,
-    marginBottom: 18,
+    marginBottom: 22,
   },
   title: {
     margin: 0,
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: 650,
     letterSpacing: "-0.01em",
     color: "#241E17",
@@ -315,8 +382,26 @@ const styles = {
     color: "#8C7F6B",
     margin: 0,
   },
+  // Two panels side by side when there's room; each has a sane min-width,
+  // so the flex container wraps them onto their own line once the page
+  // gets too narrow to fit both — no media query needed.
+  mainRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    gap: 32,
+  },
+  diagramsCol: {
+    flex: "1 1 320px",
+    minWidth: 280,
+    maxWidth: 460,
+    margin: "0 auto",
+  },
+  breakdownCol: {
+    flex: "1.15 1 300px",
+    minWidth: 280,
+  },
   diagramWrap: {
-    margin: "4px 0 18px",
     background: "#FFFFFF",
     display: "flex",
     flexWrap: "wrap",
@@ -327,16 +412,16 @@ const styles = {
   diagramItem: {
     flex: "1 1 160px",
     minWidth: 150,
-    maxWidth: 260,
+    maxWidth: 220,
   },
   legend: {
     display: "flex",
     flexWrap: "wrap",
     gap: "10px 18px",
     justifyContent: "center",
-    paddingBottom: 18,
-    marginBottom: 18,
-    borderBottom: "1px solid #EFEFEF",
+    padding: "18px 0 0",
+    marginTop: 14,
+    borderTop: "1px solid #EFEFEF",
   },
   legendItem: {
     display: "flex",
@@ -353,7 +438,6 @@ const styles = {
     fontSize: 12,
     color: "#6E6252",
   },
-  breakdown: {},
   breakdownTitle: {
     margin: "0 0 12px",
     fontSize: 13,
@@ -373,6 +457,15 @@ const styles = {
     gridTemplateColumns: "88px 1fr 62px",
     alignItems: "center",
     gap: 10,
+    padding: "4px 6px",
+    margin: "-4px -6px",
+    borderRadius: 8,
+    cursor: "pointer",
+    transition: "background 0.15s ease, box-shadow 0.15s ease",
+  },
+  rowSelected: {
+    background: "#EDF4FA",
+    boxShadow: "inset 0 0 0 1.5px #2f6fa3",
   },
   rowLabel: {
     fontSize: 12.5,
