@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from backend.src.models.exercise import Exercise
 
 class ExerciseSet(SQLModel, table=True):
+    __tablename__ = "exercise_set"
     id: Optional[int] = Field(default=None, primary_key=True)
     exercise_id: int = Field(foreign_key="exercise.id")
 
