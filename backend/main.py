@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session
@@ -23,15 +25,22 @@ from backend.src.models.exercise import Exercise
 from backend.src.models.exercise_set import ExerciseSet
 from backend.src.models.workout_session import WorkoutSession
 
-#todo: fake db later weg na dev?
 
-#todo: fake db later weg na dev?
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Runs once on startup, before the app accepts requests
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        seed_domain_data(session)
+
+    yield
 
 app = FastAPI(
     title="TA Gym",
     version="0.1.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -47,24 +56,7 @@ app.include_router(exercise_info_router)
 app.include_router(auth_router)
 app.include_router(ai_request_router)
 
-# @app.on_event("startup")
-# def on_startup():
-#     SQLModel.metadata.create_all(bind=engine)
-
-# todo: fix later dit reset en hermaakt db bij elke opstart
-@app.on_event("startup")
-def reset_db():
-    # Drop all tables first
-    SQLModel.metadata.drop_all(engine)
-    # Recreate tables
-    SQLModel.metadata.create_all(engine)
-
-    # Seed reference data (movements, exercise definitions, muscle links)
-    with Session(engine) as session:
-        seed_domain_data(session)
-
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
