@@ -14,6 +14,7 @@ export const MUSCLE_GROUPS = [
   { id: "hip_flexors", label: "Hip flexors" },
   { id: "glutes", label: "Glutes" },
   { id: "quads", label: "Quads" },
+  { id: "abductors", label: "Abductors" },
   { id: "adductors", label: "Adductors" },
   { id: "hamstrings", label: "Hamstrings" },
   { id: "calves", label: "Calves" },
@@ -123,6 +124,86 @@ export default function BodyDiagram({
         )}
         {isHovered && (
           <rect x={x} y={y} width={w} height={h} fill="#ffffff" opacity="0.22" pointerEvents="none" />
+        )}
+      </g>
+    );
+  };
+
+    const muscleStaircase = (id, x, y, w, h, side, key) => {
+    const isHovered = hoveredId === id;
+    const isSelected = selectedId === id;
+
+    let stroke = OUTLINE;
+    let strokeWidth = OUTLINE_W;
+    if (isSelected) { stroke = "#2f6fa3"; strokeWidth = OUTLINE_W + 2; }
+    if (isHovered) { stroke = "#fff6e6"; strokeWidth = OUTLINE_W + 2; }
+
+    const activeH = h / 3; // only the top third carries the muscle indicator
+    const steps = [
+      { wFrac: 1.0, opacity: 1.0 },
+      { wFrac: 0.66, opacity: 0.75 },
+      { wFrac: 0.33, opacity: 0.5 },
+    ];
+    const stepH = activeH / steps.length;
+
+    return (
+      <g
+        key={key || id}
+        onPointerEnter={() => { setHover({ id, x, y, w, h }); onHoverMuscle?.(id); }}
+        onPointerLeave={() => { setHover((c) => (c?.id === id ? null : c)); onHoverMuscle?.(null); }}
+        onPointerCancel={() => { setHover((c) => (c?.id === id ? null : c)); onHoverMuscle?.(null); }}
+        onClick={() => onSelectMuscle?.(selectedId === id ? null : id)}
+        style={{ cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+      >
+        {/* skin base fills the whole column so the lower 2/3 doesn't leave a gap */}
+        <rect x={x} y={y} width={w} height={h} fill={SKIN} stroke={OUTLINE} strokeWidth={OUTLINE_W} />
+
+        {steps.map((s, i) => {
+          const sw = w * s.wFrac;
+          const rx = side === "left" ? x : x + (w - sw);
+          const ry = y + i * stepH;
+          return (
+            <g key={i} opacity={s.opacity}>
+              <rect x={rx} y={ry} width={sw} height={stepH} fill={colorFor(id)} stroke={stroke} strokeWidth={strokeWidth} />
+              {shade(rx, ry, sw, stepH)}
+            </g>
+          );
+        })}
+
+        {isSelected && !isHovered && (
+          <rect x={x} y={y} width={w} height={activeH} fill="#3a86c8" opacity="0.16" pointerEvents="none" />
+        )}
+        {isHovered && (
+          <rect x={x} y={y} width={w} height={activeH} fill="#ffffff" opacity="0.22" pointerEvents="none" />
+        )}
+      </g>
+    );
+  };
+
+  const muscleShape = (id, d, box, key) => {
+    const isHovered = hoveredId === id;
+    const isSelected = selectedId === id;
+
+    let stroke = OUTLINE;
+    let strokeWidth = OUTLINE_W;
+    if (isSelected) { stroke = "#2f6fa3"; strokeWidth = OUTLINE_W + 2; }
+    if (isHovered) { stroke = "#fff6e6"; strokeWidth = OUTLINE_W + 2; }
+
+    return (
+      <g
+        key={key || id}
+        onPointerEnter={() => { setHover({ id, ...box }); onHoverMuscle?.(id); }}
+        onPointerLeave={() => { setHover((c) => (c?.id === id ? null : c)); onHoverMuscle?.(null); }}
+        onPointerCancel={() => { setHover((c) => (c?.id === id ? null : c)); onHoverMuscle?.(null); }}
+        onClick={() => onSelectMuscle?.(selectedId === id ? null : id)}
+        style={{ cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+      >
+        <path d={d} fill={colorFor(id)} stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" />
+        {isSelected && !isHovered && (
+          <path d={d} fill="#3a86c8" opacity="0.16" pointerEvents="none" />
+        )}
+        {isHovered && (
+          <path d={d} fill="#ffffff" opacity="0.22" pointerEvents="none" />
         )}
       </g>
     );
@@ -242,10 +323,16 @@ export default function BodyDiagram({
         </>
       )}
 
-      {/* ---- LEFT LEG ---- */}
+            {/* ---- LEFT LEG ---- */}
       {front ? (
         <>
-          {muscle("quads", 84, 180, 20, 88, "upperleg-l")}
+          {muscle("abductors", 84, 180, 7, 30, "abductor-l")}
+          {muscleShape(
+            "quads",
+            "M91,180 L104,180 L104,268 L84,268 L84,210 L91,210 Z",
+            { x: 84, y: 180, w: 20, h: 88 },
+            "upperleg-l"
+          )}
           {muscle("adductors", 104, 180, 10, 88, "adductor-l")}
         </>
       ) : (
@@ -258,14 +345,20 @@ export default function BodyDiagram({
       {front ? (
         <>
           {muscle("adductors", 126, 180, 10, 88, "adductor-r")}
-          {muscle("quads", 136, 180, 20, 88, "upperleg-r")}
+          {muscleShape(
+            "quads",
+            "M136,180 L149,180 L149,210 L156,210 L156,268 L136,268 Z",
+            { x: 136, y: 180, w: 20, h: 88 },
+            "upperleg-r"
+          )}
+          {muscle("abductors", 149, 180, 7, 30, "abductor-r")}
         </>
       ) : (
         muscle("hamstrings", 126, 180, 30, 88, "upperleg-r")
       )}
       {muscle("calves", 126, 268, 30, 86, "calf-r")}
       {skinBlock(124, 354, 34, 22, "foot-r")}
-
+      
       <text
         x="120"
         y="422"
