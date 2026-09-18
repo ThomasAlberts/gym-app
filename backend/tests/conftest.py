@@ -1,5 +1,3 @@
-# backend/tests/conftest.py
-
 import pytest
 from sqlmodel import SQLModel, create_engine, Session
 from sqlmodel.pool import StaticPool
@@ -17,6 +15,7 @@ from backend.src.models.exercise_set import ExerciseSet
 from backend.src.models.workout_session import WorkoutSession
 
 from backend.src.adapters.database.database import get_database
+from backend.src.adapters.database.seed import seed_domain_data
 from backend.main import app
 
 
@@ -55,14 +54,5 @@ def client(db):
 
 # ── 4. Seed domain data ────────────────────────────────────
 @pytest.fixture(scope="function", autouse=True)
-def seed_domain_data(db: Session):
-    from backend.tests.fixtures.domain_setup_tests import (
-        _movements,
-        _exercise_definitions,
-        _exercise_muscle_links,
-    )
-
-    db.add_all(_movements())
-    db.add_all(_exercise_definitions())
-    db.add_all(_exercise_muscle_links())
-    db.commit()
+def seed_domain_data_for_tests(db: Session):
+    seed_domain_data(db)

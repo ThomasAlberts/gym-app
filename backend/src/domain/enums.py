@@ -40,6 +40,8 @@ class Muscle(str, Enum):
     LATS = "lats"
     RHOMBOIDS = "rhomboids"
     TRAPS = "traps"
+    UPPER_TRAPS = "upper_traps"
+    MID_TRAPS = "mid_traps"
     QUADS = "quads"
     HAMSTRINGS = "hamstrings"
     GLUTES = "glutes"
@@ -47,6 +49,9 @@ class Muscle(str, Enum):
     ABS = "abs"
     OBLIQUES = "obliques"
     LOWER_BACK = "lower_back"
+    HIP_FLEXORS = "hip_flexors"
+    ADDUCTORS = "adductors"
+    ABDUCTORS = "abductors"
 
 # Equipment
 class EquipmentType(str, Enum):
