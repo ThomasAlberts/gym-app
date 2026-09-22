@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import useWorkoutSession from "./useWorkoutSession";
-import ExerciseList from "./ExerciseList";
-import AddExerciseForm from "./AddExerciseForm";
-import WorkoutTimer from "./WorkoutTimer";
+import useWorkoutSession from "./useWorkoutSession.js";
+import ExerciseList from "./ExerciseList.jsx";
+import AddExerciseForm from "../shared/AddExerciseForm.jsx";
+import WorkoutTimer from "./WorkoutTimer.jsx";
 import SuggestExercise from "./SuggestExercise.jsx";
 
 export default function WorkoutSession() {

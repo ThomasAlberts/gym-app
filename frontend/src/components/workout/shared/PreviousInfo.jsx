@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../../api/axios";
+import api from "../../../api/axios.js";
 
 const DEFAULT_LOOKBACK_DAYS = 90;
 const DEFAULT_LIMIT = 3;

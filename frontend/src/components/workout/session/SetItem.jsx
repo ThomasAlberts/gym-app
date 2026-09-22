@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { formatTime as format, parseTime } from "../utils/time";
+import { formatTime as format, parseTime } from "../../utils/time.js";
 
 const now = () => Math.floor(Date.now() / 1000);
 

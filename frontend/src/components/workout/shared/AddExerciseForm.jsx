@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import api from "../../api/axios";
-import PreviousInfo from "./PreviousInfo";
+import api from "../../../api/axios.js";
+import PreviousInfo from "./PreviousInfo.jsx";
 
 const LOOKBACK_DAYS = 90; // how far back to search for a previous instance
 

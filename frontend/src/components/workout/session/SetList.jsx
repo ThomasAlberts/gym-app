@@ -1,4 +1,4 @@
-import SetItem from "./SetItem";
+import SetItem from "./SetItem.jsx";
 
 export default function SetList({ sets, onChange }) {
   const emptySet = { reps: 0, weight: 0, state: "idle", workTime: 0, restTime: 0 };

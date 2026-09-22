@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { formatTime } from "../utils/time";
+import { formatTime } from "../../utils/time.js";
 
 /**
  * Displays live session time plus total work/rest across all sets.

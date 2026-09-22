@@ -16,7 +16,7 @@ class WorkoutSession(SQLModel, table=True):
 
     user_id: int = Field(foreign_key="user.id")
 
-    started_at: datetime
+    started_at: Optional[datetime] = None
 
     ended_at: Optional[datetime] = None
 

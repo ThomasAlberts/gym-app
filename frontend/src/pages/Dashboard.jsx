@@ -84,6 +84,7 @@ export default function Dashboard() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <h2>Dashboard</h2>
+      <button onClick={() => navigate("/workout/planner")}>Plan a Workout</button>
 
       <section>
         <h3>All your workouts ({workouts.length})</h3>

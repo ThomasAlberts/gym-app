@@ -1,6 +1,6 @@
 // SuggestExercise.jsx
 import { useState } from "react";
-import api from "../../api/axios";
+import api from "../../../api/axios.js";
 
 const buildPayload = (exercises) => ({
   current_exercises: (exercises || []).map((ex) => ({

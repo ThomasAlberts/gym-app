@@ -1,6 +1,6 @@
-import ExerciseItem from "./ExerciseItem";
+import PlanExerciseItem from "./PlanExerciseItem.jsx";
 
-export default function ExerciseList({ exercises, onChange }) {
+export default function PlanExerciseList({ exercises, onChange }) {
   const updateExercise = (updated) => {
     onChange(exercises.map((ex) => (ex.id === updated.id ? updated : ex)));
   };
@@ -12,12 +12,7 @@ export default function ExerciseList({ exercises, onChange }) {
   return (
     <>
       {exercises.map((ex) => (
-        <ExerciseItem
-          key={ex.id}
-          exercise={ex}
-          onChange={updateExercise}
-          onDelete={deleteExercise}
-        />
+        <PlanExerciseItem key={ex.id} exercise={ex} onChange={updateExercise} onDelete={deleteExercise} />
       ))}
     </>
   );

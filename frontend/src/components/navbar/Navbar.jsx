@@ -11,12 +11,8 @@ export default function Navbar() {
         padding: "1rem",
         background: "#eee",
         display: "flex",
+        alignItems: "center",
         justifyContent: "space-between",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        zIndex: 1000,
         boxSizing: "border-box",
       }}
     >

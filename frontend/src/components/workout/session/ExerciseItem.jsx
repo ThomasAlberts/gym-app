@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import SetList from "./SetList";
-import PreviousInfo from "./PreviousInfo";
-import { formatTime } from "../utils/time";
+import SetList from "./SetList.jsx";
+import PreviousInfo from "../shared/PreviousInfo.jsx";
+import { formatTime } from "../../utils/time.js";
 
 const LOOKBACK_DAYS = 90;
 

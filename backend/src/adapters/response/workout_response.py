@@ -25,7 +25,7 @@ class WorkoutResponse(BaseModel):
     id: int
     user_id: int
     name: Optional[str]
-    started_at: datetime
+    started_at: Optional[datetime]
     ended_at: Optional[datetime]
     exercises: List[ExerciseResponse] = []
 
@@ -33,4 +33,4 @@ class WorkoutResponse(BaseModel):
 
 class ExerciseWithWorkoutResponse(ExerciseResponse):
     workout_id: int
-    workout_started_at: datetime
+    workout_started_at: Optional[datetime]

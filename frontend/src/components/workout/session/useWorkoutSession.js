@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import api from "../../api/axios";
+import api from "../../../api/axios";
 
 const parseServerDate = (value) => {
   if (value == null) return null;
@@ -70,8 +70,8 @@ const buildPayload = (session, isFinal) => ({
     exercise_sets: (ex.exercise_sets || []).map((s) => ({
       reps: s.reps,
       weight: s.weight,
-      workTime: s.workTime || 0,
-      restTime: s.restTime || 0,
+      work_time: s.workTime || 0,
+      rest_time: s.restTime || 0,
     })),
   })),
 });

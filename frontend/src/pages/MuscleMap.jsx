@@ -340,7 +340,6 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     padding: "24px 16px",
-    background: "#FAF7F1",
     minHeight: "100vh",
     boxSizing: "border-box",
   },
