@@ -4,8 +4,8 @@ from sqlmodel import Session, select
 from pydantic import BaseModel
 
 from backend.src.adapters.database.database import get_database
-from backend.src.models.user import User
-from backend.src.models.refresh_token import RefreshToken
+from backend.src.domain.user import User
+from backend.src.domain.refresh_token import RefreshToken
 from backend.src.core.security import hash_password, verify_password, hash_token
 from backend.src.core.jwt import create_access_token, create_refresh_token
 from backend.src.core.config import settings

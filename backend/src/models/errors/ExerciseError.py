@@ -1,2 +1,0 @@
-class ExerciseError(Exception):
-    pass

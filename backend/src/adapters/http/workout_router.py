@@ -5,7 +5,7 @@ from sqlmodel import Session
 
 from backend.src.adapters.database.database import get_database        # your database session dependency
 from backend.src.adapters.response.workout_response import WorkoutResponse
-from backend.src.models.user import User
+from backend.src.domain.user import User
 from backend.src.adapters.dto.workout_dto import WorkoutCreate, WorkoutUpdate  # the Pydantic/SQLModel schema for input
 from backend.src.core.deps import get_current_user  # dependency to get logged-in user
 from backend.src.services.workout_service import WorkoutService

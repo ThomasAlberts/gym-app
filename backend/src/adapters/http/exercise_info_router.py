@@ -9,7 +9,7 @@ from backend.src.adapters.response.workout_response import (
     ExerciseWithWorkoutResponse,
 )
 from backend.src.core.deps import get_current_user
-from backend.src.models.user import User
+from backend.src.domain.user import User
 from backend.src.services.exercise_info_service import (
     ExerciseInfoService,
 )

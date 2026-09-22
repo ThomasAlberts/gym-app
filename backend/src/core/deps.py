@@ -3,7 +3,7 @@ from jose import jwt, JWTError
 from sqlmodel import Session
 
 from backend.src.adapters.database.database import get_database
-from backend.src.models.user import User
+from backend.src.domain.user import User
 from backend.src.core.config import settings
 from backend.src.core.roles import Role
 

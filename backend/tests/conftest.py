@@ -4,15 +4,8 @@ from sqlmodel.pool import StaticPool
 from starlette.testclient import TestClient
 
 # Domain models
-from backend.src.domain.exercise_definition import ExerciseDefinition
-from backend.src.domain.exercise_muscle_link import ExerciseMuscleLink
-from backend.src.domain.movement import Movement
 
 # Models
-from backend.src.models.user import User
-from backend.src.models.exercise import Exercise
-from backend.src.models.exercise_set import ExerciseSet
-from backend.src.models.workout_session import WorkoutSession
 
 from backend.src.adapters.database.database import get_database
 from backend.src.adapters.database.seed import seed_domain_data

@@ -3,9 +3,9 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from backend.src.domain.exercise_definition import ExerciseDefinition
-from backend.src.models.workout_session import WorkoutSession
-from backend.src.models.exercise import Exercise
-from backend.src.models.exercise_set import ExerciseSet
+from backend.src.domain.workout_session import WorkoutSession
+from backend.src.domain.exercise import Exercise
+from backend.src.domain.exercise_set import ExerciseSet
 from backend.src.adapters.dto.workout_dto import WorkoutCreate, WorkoutUpdate
 
 

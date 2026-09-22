@@ -7,7 +7,7 @@ from .enums import EquipmentType, GripType, AngleType
 if TYPE_CHECKING:
     from .movement import Movement  # used only for type hints
     from .exercise_muscle_link import ExerciseMuscleLink
-    from ..models.exercise import Exercise
+    from backend.src.domain.exercise import Exercise
 
 class ExerciseDefinition(SQLModel, table=True):
     __tablename__ = "exercise_definition"

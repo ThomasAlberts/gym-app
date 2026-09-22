@@ -6,7 +6,6 @@ from sqlmodel import SQLModel, Session
 
 from backend.src.adapters.database.database import engine
 from backend.src.adapters.database.seed import seed_domain_data
-from backend.src.adapters.http import ai_request_router
 from backend.src.core.config import settings
 
 from backend.src.adapters.http.workout_router import router as workout_router
@@ -15,15 +14,8 @@ from backend.src.adapters.http.ai_request_router import router as ai_request_rou
 from backend.src.adapters.auth.auth_router import router as auth_router
 
 # Domain models
-from backend.src.domain.exercise_definition import ExerciseDefinition
-from backend.src.domain.exercise_muscle_link import ExerciseMuscleLink
-from backend.src.domain.movement import Movement
 
 # Models
-from backend.src.models.user import User
-from backend.src.models.exercise import Exercise
-from backend.src.models.exercise_set import ExerciseSet
-from backend.src.models.workout_session import WorkoutSession
 
 
 @asynccontextmanager

@@ -3,7 +3,7 @@ from typing import Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
-    from backend.src.models.exercise import Exercise
+    from backend.src.domain.exercise import Exercise
 
 class ExerciseSet(SQLModel, table=True):
     __tablename__ = "exercise_set"

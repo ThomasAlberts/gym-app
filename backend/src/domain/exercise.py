@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional, List
 from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
-    from ..domain.exercise_definition import ExerciseDefinition
+    from backend.src.domain.exercise_definition import ExerciseDefinition
     from .exercise_set import ExerciseSet
     from .workout_session import WorkoutSession
 

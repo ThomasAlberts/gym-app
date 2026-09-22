@@ -4,8 +4,8 @@ from sqlmodel import Session, select
 
 from backend.src.domain.exercise_definition import ExerciseDefinition
 from backend.src.domain.exercise_muscle_link import ExerciseMuscleLink  # adjust import path if this lives elsewhere
-from backend.src.models.exercise import Exercise
-from backend.src.models.workout_session import WorkoutSession
+from backend.src.domain.exercise import Exercise
+from backend.src.domain.workout_session import WorkoutSession
 
 
 class ExerciseInfoService:
