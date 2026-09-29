@@ -1,8 +1,10 @@
 from sqlmodel import Session, select
 
-from backend.src.domain.movement import Movement
-from backend.src.domain.exercise_definition import ExerciseDefinition
-from backend.src.domain.exercise_muscle_link import ExerciseMuscleLink
+from backend.src.adapters.database.models import (
+    Movement,
+    ExerciseDefinition,
+    MuscleEmphasis
+)
 from backend.src.domain.enums import (
     MovementPattern,
     AngleType,
@@ -11,591 +13,173 @@ from backend.src.domain.enums import (
     Muscle,
 )
 
+# (id, name, movement_pattern)
+MOVEMENTS = [
+    # Squat
+    (1, "Back squat", MovementPattern.SQUAT),
+    (2, "Front squat", MovementPattern.SQUAT),
+    (3, "Goblet squat", MovementPattern.SQUAT),
+    # Hinge
+    (4, "Conventional deadlift", MovementPattern.HINGE),
+    (5, "Romanian deadlift", MovementPattern.HINGE),
+    (6, "Kettlebell swing", MovementPattern.HINGE),
+    # Lunge
+    (7, "Walking lunge", MovementPattern.LUNGE),
+    (8, "Reverse lunge", MovementPattern.LUNGE),
+    (9, "Bulgarian split squat", MovementPattern.LUNGE),
+    # Horizontal push
+    (10, "Bench press", MovementPattern.HORIZONTAL_PUSH),
+    (11, "Incline bench press", MovementPattern.HORIZONTAL_PUSH),
+    (12, "Decline bench press", MovementPattern.HORIZONTAL_PUSH),
+    (13, "Push-up", MovementPattern.HORIZONTAL_PUSH),
+    (14, "Dumbbell floor press", MovementPattern.HORIZONTAL_PUSH),
+    # Vertical push
+    (15, "Overhead press (strict press)", MovementPattern.VERTICAL_PUSH),
+    (16, "Push press", MovementPattern.VERTICAL_PUSH),
+    (17, "Seated dumbbell shoulder press", MovementPattern.VERTICAL_PUSH),
+    (18, "Machine shoulder press", MovementPattern.VERTICAL_PUSH),
+    # Horizontal pull
+    (19, "Bent-over barbell row", MovementPattern.HORIZONTAL_PULL),
+    (20, "Chest-supported row", MovementPattern.HORIZONTAL_PULL),
+    (21, "Seated cable row", MovementPattern.HORIZONTAL_PULL),
+    (22, "Inverted row (TRX/bar)", MovementPattern.HORIZONTAL_PULL),
+    # Vertical pull
+    (23, "Pull-up", MovementPattern.VERTICAL_PULL),
+    (24, "Chin-up", MovementPattern.VERTICAL_PULL),
+    (25, "Lat pull-down", MovementPattern.VERTICAL_PULL),
+    (26, "Assisted pull-up", MovementPattern.VERTICAL_PULL),
+    # Carry
+    (27, "Farmer's carry", MovementPattern.CARRY),
+    (28, "Suitcase carry", MovementPattern.CARRY),
+    (29, "Rack carry", MovementPattern.CARRY),
+    # Rotation / anti-rotation
+    (30, "Cable woodchop", MovementPattern.ROTATION),
+    (31, "Pallof press", MovementPattern.ROTATION),
+    (32, "Russian twist", MovementPattern.ROTATION),
+]
 
-def _movements():
+# (id, name, movement_id, equipment_type, grip_type, angle)
+EXERCISE_DEFINITIONS = [
+    # Squats
+    (1, "Barbell back squat", 1, EquipmentType.BARBELL, GripType.NEUTRAL, None),
+    (2, "Barbell front squat", 2, EquipmentType.BARBELL, GripType.NEUTRAL, None),
+    (3, "Goblet squat", 3, EquipmentType.KETTLEBELL, GripType.NEUTRAL, None),
+    # Hinges
+    (4, "Conventional deadlift", 4, EquipmentType.BARBELL, GripType.NEUTRAL, None),
+    (5, "Romanian deadlift", 5, EquipmentType.BARBELL, GripType.NEUTRAL, None),
+    (6, "Kettlebell swing", 6, EquipmentType.KETTLEBELL, GripType.NEUTRAL, None),
+    # Lunges
+    (7, "Walking dumbbell lunge", 7, EquipmentType.DUMBBELL, GripType.NEUTRAL, None),
+    (8, "Reverse dumbbell lunge", 8, EquipmentType.DUMBBELL, GripType.NEUTRAL, None),
+    (9, "Bulgarian split squat (dumbbells)", 9, EquipmentType.DUMBBELL, GripType.NEUTRAL, None),
+    # Horizontal push
+    (10, "Barbell bench press", 10, EquipmentType.BARBELL, GripType.NEUTRAL, AngleType.FLAT),
+    (11, "Barbell incline bench press", 11, EquipmentType.BARBELL, GripType.NEUTRAL, AngleType.INCLINE),
+    (12, "Barbell decline bench press", 12, EquipmentType.BARBELL, GripType.NEUTRAL, AngleType.DECLINE),
+    (13, "Push-up", 13, EquipmentType.BODYWEIGHT, GripType.NEUTRAL, AngleType.FLAT),
+    (14, "Dumbbell floor press", 14, EquipmentType.DUMBBELL, GripType.NEUTRAL, AngleType.FLAT),
+    # Vertical push
+    (15, "Barbell overhead press", 15, EquipmentType.BARBELL, GripType.NEUTRAL, None),
+    (16, "Push press", 16, EquipmentType.BARBELL, GripType.NEUTRAL, None),
+    (17, "Seated dumbbell shoulder press", 17, EquipmentType.DUMBBELL, GripType.NEUTRAL, None),
+    (18, "Machine shoulder press", 18, EquipmentType.MACHINE, GripType.NEUTRAL, None),
+    # Horizontal pull
+    (19, "Bent-over barbell row", 19, EquipmentType.BARBELL, GripType.NEUTRAL, None),
+    (20, "Chest-supported dumbbell row", 20, EquipmentType.DUMBBELL, GripType.NEUTRAL, None),
+    (21, "Seated cable row (V-bar)", 21, EquipmentType.CABLE_V_BAR, GripType.NEUTRAL, None),
+    (22, "Inverted row", 22, EquipmentType.BODYWEIGHT, GripType.NEUTRAL, None),
+    # Vertical pull
+    (23, "Pull-up", 23, EquipmentType.BODYWEIGHT, GripType.PRONATED, None),
+    (24, "Chin-up", 24, EquipmentType.BODYWEIGHT, GripType.SUPINATED, None),
+    (25, "Lat pull-down (wide grip)", 25, EquipmentType.CABLE_LAT_PULLDOWN_BAR, GripType.WIDE, None),
+    (26, "Assisted pull-up (machine)", 26, EquipmentType.MACHINE, GripType.NEUTRAL, None),
+    # Carry
+    (27, "Farmer's carry (dumbbells)", 27, EquipmentType.DUMBBELL, GripType.NEUTRAL, None),
+    (28, "Suitcase carry (single dumbbell)", 28, EquipmentType.DUMBBELL, GripType.NEUTRAL, None),
+    (29, "Rack carry (barbell)", 29, EquipmentType.BARBELL, GripType.NEUTRAL, None),
+    # Rotation
+    (30, "Cable woodchop (high to low)", 30, EquipmentType.CABLE_SINGLE_D_HANDLE, GripType.NEUTRAL, None),
+    (31, "Pallof press", 31, EquipmentType.CABLE, GripType.NEUTRAL, None),
+    (32, "Russian twist (medicine ball)", 32, EquipmentType.MEDICINE_BALL, GripType.NEUTRAL, None),
+]
+
+# exercise_definition_id -> [(muscle, emphasis), ...]
+MUSCLE_EMPHASIS = {
+    # Squats
+    1: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.HAMSTRINGS, 0.5), (Muscle.LOWER_BACK, 0.5), (Muscle.ABS, 0.25)],
+    2: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.ABS, 0.75), (Muscle.LOWER_BACK, 0.5), (Muscle.HAMSTRINGS, 0.25)],
+    3: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.ABS, 0.5), (Muscle.ADDUCTORS, 0.25)],
+    # Hinges
+    4: [(Muscle.HAMSTRINGS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.LOWER_BACK, 1.0), (Muscle.TRAPS, 0.5), (Muscle.FOREARMS, 0.5), (Muscle.ABS, 0.5)],
+    5: [(Muscle.HAMSTRINGS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.LOWER_BACK, 0.5), (Muscle.FOREARMS, 0.25)],
+    6: [(Muscle.HAMSTRINGS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.LOWER_BACK, 0.5), (Muscle.ABS, 0.5), (Muscle.FRONT_DELTS, 0.25)],
+    # Lunges
+    7: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.HAMSTRINGS, 0.5), (Muscle.CALVES, 0.25), (Muscle.ABS, 0.25)],
+    8: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.HAMSTRINGS, 0.5), (Muscle.CALVES, 0.25)],
+    9: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.HAMSTRINGS, 0.5), (Muscle.ABS, 0.25)],
+    # Horizontal push
+    10: [(Muscle.CHEST_MID, 1.0), (Muscle.TRICEPS, 0.75), (Muscle.FRONT_DELTS, 0.5), (Muscle.CHEST_UPPER, 0.25)],
+    11: [(Muscle.CHEST_UPPER, 1.0), (Muscle.FRONT_DELTS, 0.75), (Muscle.TRICEPS, 0.5), (Muscle.CHEST_MID, 0.25)],
+    12: [(Muscle.CHEST_LOWER, 1.0), (Muscle.TRICEPS, 0.75), (Muscle.FRONT_DELTS, 0.5), (Muscle.CHEST_MID, 0.25)],
+    13: [(Muscle.CHEST_MID, 1.0), (Muscle.TRICEPS, 0.75), (Muscle.FRONT_DELTS, 0.5), (Muscle.ABS, 0.25)],
+    14: [(Muscle.CHEST_MID, 1.0), (Muscle.TRICEPS, 0.75), (Muscle.FRONT_DELTS, 0.5)],
+    # Vertical push
+    15: [(Muscle.FRONT_DELTS, 1.0), (Muscle.TRICEPS, 0.75), (Muscle.CHEST_UPPER, 0.5), (Muscle.SIDE_DELTS, 0.25), (Muscle.ABS, 0.25)],
+    16: [(Muscle.FRONT_DELTS, 1.0), (Muscle.TRICEPS, 0.75), (Muscle.GLUTES, 0.5), (Muscle.QUADS, 0.25)],
+    17: [(Muscle.FRONT_DELTS, 1.0), (Muscle.SIDE_DELTS, 0.75), (Muscle.TRICEPS, 0.5), (Muscle.UPPER_TRAPS, 0.25)],
+    18: [(Muscle.FRONT_DELTS, 1.0), (Muscle.SIDE_DELTS, 0.75), (Muscle.TRICEPS, 0.5)],
+    # Horizontal pull
+    19: [(Muscle.LATS, 1.0), (Muscle.RHOMBOIDS, 0.75), (Muscle.MID_TRAPS, 0.5), (Muscle.REAR_DELTS, 0.5), (Muscle.BICEPS, 0.5), (Muscle.LOWER_BACK, 0.5)],
+    20: [(Muscle.LATS, 1.0), (Muscle.RHOMBOIDS, 0.75), (Muscle.REAR_DELTS, 0.5), (Muscle.BICEPS, 0.5)],
+    21: [(Muscle.LATS, 1.0), (Muscle.RHOMBOIDS, 0.75), (Muscle.MID_TRAPS, 0.5), (Muscle.BICEPS, 0.5), (Muscle.REAR_DELTS, 0.25)],
+    22: [(Muscle.LATS, 1.0), (Muscle.RHOMBOIDS, 0.75), (Muscle.REAR_DELTS, 0.5), (Muscle.BICEPS, 0.5), (Muscle.ABS, 0.25)],
+    # Vertical pull
+    23: [(Muscle.LATS, 1.0), (Muscle.RHOMBOIDS, 0.5), (Muscle.REAR_DELTS, 0.5), (Muscle.BICEPS, 0.5), (Muscle.FOREARMS, 0.25)],
+    24: [(Muscle.LATS, 1.0), (Muscle.BICEPS, 0.75), (Muscle.RHOMBOIDS, 0.5), (Muscle.REAR_DELTS, 0.25)],
+    25: [(Muscle.LATS, 1.0), (Muscle.RHOMBOIDS, 0.5), (Muscle.REAR_DELTS, 0.5), (Muscle.BICEPS, 0.5)],
+    26: [(Muscle.LATS, 1.0), (Muscle.BICEPS, 0.5), (Muscle.RHOMBOIDS, 0.5), (Muscle.REAR_DELTS, 0.25)],
+    # Carry
+    27: [(Muscle.FOREARMS, 1.0), (Muscle.TRAPS, 0.75), (Muscle.ABS, 0.75), (Muscle.LOWER_BACK, 0.5), (Muscle.CALVES, 0.25)],
+    28: [(Muscle.FOREARMS, 1.0), (Muscle.OBLIQUES, 1.0), (Muscle.ABS, 0.75), (Muscle.LOWER_BACK, 0.5)],
+    29: [(Muscle.FRONT_DELTS, 0.75), (Muscle.TRAPS, 0.75), (Muscle.ABS, 0.75), (Muscle.FOREARMS, 0.5), (Muscle.LOWER_BACK, 0.5)],
+    # Rotation
+    30: [(Muscle.OBLIQUES, 1.0), (Muscle.ABS, 0.75), (Muscle.LATS, 0.5), (Muscle.FRONT_DELTS, 0.25)],
+    31: [(Muscle.OBLIQUES, 1.0), (Muscle.ABS, 1.0), (Muscle.FRONT_DELTS, 0.5)],
+    32: [(Muscle.OBLIQUES, 1.0), (Muscle.ABS, 0.75), (Muscle.HIP_FLEXORS, 0.25)],
+}
+
+
+def _movements() -> list[Movement]:
     return [
-        # Squat pattern
-        Movement(id=1, name="Back squat", movement_pattern=MovementPattern.SQUAT),
-        Movement(id=2, name="Front squat", movement_pattern=MovementPattern.SQUAT),
-        Movement(id=3, name="Goblet squat", movement_pattern=MovementPattern.SQUAT),
-
-        # Hinge pattern
-        Movement(id=4, name="Conventional deadlift", movement_pattern=MovementPattern.HINGE),
-        Movement(id=5, name="Romanian deadlift", movement_pattern=MovementPattern.HINGE),
-        Movement(id=6, name="Kettlebell swing", movement_pattern=MovementPattern.HINGE),
-
-        # Lunge pattern
-        Movement(id=7, name="Walking lunge", movement_pattern=MovementPattern.LUNGE),
-        Movement(id=8, name="Reverse lunge", movement_pattern=MovementPattern.LUNGE),
-        Movement(id=9, name="Bulgarian split squat", movement_pattern=MovementPattern.LUNGE),
-
-        # Horizontal push
-        Movement(id=10, name="Bench press", movement_pattern=MovementPattern.HORIZONTAL_PUSH),
-        Movement(id=11, name="Incline bench press", movement_pattern=MovementPattern.HORIZONTAL_PUSH),
-        Movement(id=12, name="Decline bench press", movement_pattern=MovementPattern.HORIZONTAL_PUSH),
-        Movement(id=13, name="Push-up", movement_pattern=MovementPattern.HORIZONTAL_PUSH),
-        Movement(id=14, name="Dumbbell floor press", movement_pattern=MovementPattern.HORIZONTAL_PUSH),
-
-        # Vertical push
-        Movement(id=15, name="Overhead press (strict press)", movement_pattern=MovementPattern.VERTICAL_PUSH),
-        Movement(id=16, name="Push press", movement_pattern=MovementPattern.VERTICAL_PUSH),
-        Movement(id=17, name="Seated dumbbell shoulder press", movement_pattern=MovementPattern.VERTICAL_PUSH),
-        Movement(id=18, name="Machine shoulder press", movement_pattern=MovementPattern.VERTICAL_PUSH),
-
-        # Horizontal pull
-        Movement(id=19, name="Bent-over barbell row", movement_pattern=MovementPattern.HORIZONTAL_PULL),
-        Movement(id=20, name="Chest-supported row", movement_pattern=MovementPattern.HORIZONTAL_PULL),
-        Movement(id=21, name="Seated cable row", movement_pattern=MovementPattern.HORIZONTAL_PULL),
-        Movement(id=22, name="Inverted row (TRX/bar)", movement_pattern=MovementPattern.HORIZONTAL_PULL),
-
-        # Vertical pull
-        Movement(id=23, name="Pull-up", movement_pattern=MovementPattern.VERTICAL_PULL),
-        Movement(id=24, name="Chin-up", movement_pattern=MovementPattern.VERTICAL_PULL),
-        Movement(id=25, name="Lat pull-down", movement_pattern=MovementPattern.VERTICAL_PULL),
-        Movement(id=26, name="Assisted pull-up", movement_pattern=MovementPattern.VERTICAL_PULL),
-
-        # Carry
-        Movement(id=27, name="Farmer's carry", movement_pattern=MovementPattern.CARRY),
-        Movement(id=28, name="Suitcase carry", movement_pattern=MovementPattern.CARRY),
-        Movement(id=29, name="Rack carry", movement_pattern=MovementPattern.CARRY),
-
-        # Rotation / anti-rotation
-        Movement(id=30, name="Cable woodchop", movement_pattern=MovementPattern.ROTATION),
-        Movement(id=31, name="Pallof press", movement_pattern=MovementPattern.ROTATION),
-        Movement(id=32, name="Russian twist", movement_pattern=MovementPattern.ROTATION),
+        Movement(id=id_, name=name, movement_pattern=pattern)
+        for id_, name, pattern in MOVEMENTS
     ]
 
 
-def _exercise_definitions():
+def _exercise_definitions() -> list[ExerciseDefinition]:
     return [
-        # Squats
         ExerciseDefinition(
-            id=1,
-            name="Barbell back squat",
-            movement_id=1,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=2,
-            name="Barbell front squat",
-            movement_id=2,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=3,
-            name="Goblet squat",
-            movement_id=3,
-            equipment_type=EquipmentType.KETTLEBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-
-        # Hinges
-        ExerciseDefinition(
-            id=4,
-            name="Conventional deadlift",
-            movement_id=4,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=5,
-            name="Romanian deadlift",
-            movement_id=5,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=6,
-            name="Kettlebell swing",
-            movement_id=6,
-            equipment_type=EquipmentType.KETTLEBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-
-        # Lunges
-        ExerciseDefinition(
-            id=7,
-            name="Walking dumbbell lunge",
-            movement_id=7,
-            equipment_type=EquipmentType.DUMBBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=8,
-            name="Reverse dumbbell lunge",
-            movement_id=8,
-            equipment_type=EquipmentType.DUMBBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=9,
-            name="Bulgarian split squat (dumbbells)",
-            movement_id=9,
-            equipment_type=EquipmentType.DUMBBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-
-        # Horizontal push
-        ExerciseDefinition(
-            id=10,
-            name="Barbell bench press",
-            movement_id=10,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-            angle=AngleType.FLAT,
-        ),
-        ExerciseDefinition(
-            id=11,
-            name="Barbell incline bench press",
-            movement_id=11,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-            angle=AngleType.INCLINE,
-        ),
-        ExerciseDefinition(
-            id=12,
-            name="Barbell decline bench press",
-            movement_id=12,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-            angle=AngleType.DECLINE,
-        ),
-        ExerciseDefinition(
-            id=13,
-            name="Push-up",
-            movement_id=13,
-            equipment_type=EquipmentType.BODYWEIGHT,
-            grip_type=GripType.NEUTRAL,
-            angle=AngleType.FLAT,
-        ),
-        ExerciseDefinition(
-            id=14,
-            name="Dumbbell floor press",
-            movement_id=14,
-            equipment_type=EquipmentType.DUMBBELL,
-            grip_type=GripType.NEUTRAL,
-            angle=AngleType.FLAT,
-        ),
-
-        # Vertical push
-        ExerciseDefinition(
-            id=15,
-            name="Barbell overhead press",
-            movement_id=15,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=16,
-            name="Push press",
-            movement_id=16,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=17,
-            name="Seated dumbbell shoulder press",
-            movement_id=17,
-            equipment_type=EquipmentType.DUMBBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=18,
-            name="Machine shoulder press",
-            movement_id=18,
-            equipment_type=EquipmentType.MACHINE,
-            grip_type=GripType.NEUTRAL,
-        ),
-
-        # Horizontal pull
-        ExerciseDefinition(
-            id=19,
-            name="Bent-over barbell row",
-            movement_id=19,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=20,
-            name="Chest-supported dumbbell row",
-            movement_id=20,
-            equipment_type=EquipmentType.DUMBBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=21,
-            name="Seated cable row (V-bar)",
-            movement_id=21,
-            equipment_type=EquipmentType.CABLE_V_BAR,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=22,
-            name="Inverted row",
-            movement_id=22,
-            equipment_type=EquipmentType.BODYWEIGHT,
-            grip_type=GripType.NEUTRAL,
-        ),
-
-        # Vertical pull
-        ExerciseDefinition(
-            id=23,
-            name="Pull-up",
-            movement_id=23,
-            equipment_type=EquipmentType.BODYWEIGHT,
-            grip_type=GripType.PRONATED,
-        ),
-        ExerciseDefinition(
-            id=24,
-            name="Chin-up",
-            movement_id=24,
-            equipment_type=EquipmentType.BODYWEIGHT,
-            grip_type=GripType.SUPINATED,
-        ),
-        ExerciseDefinition(
-            id=25,
-            name="Lat pull-down (wide grip)",
-            movement_id=25,
-            equipment_type=EquipmentType.CABLE_LAT_PULLDOWN_BAR,
-            grip_type=GripType.WIDE,
-        ),
-        ExerciseDefinition(
-            id=26,
-            name="Assisted pull-up (machine)",
-            movement_id=26,
-            equipment_type=EquipmentType.MACHINE,
-            grip_type=GripType.NEUTRAL,
-        ),
-
-        # Carry
-        ExerciseDefinition(
-            id=27,
-            name="Farmer's carry (dumbbells)",
-            movement_id=27,
-            equipment_type=EquipmentType.DUMBBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=28,
-            name="Suitcase carry (single dumbbell)",
-            movement_id=28,
-            equipment_type=EquipmentType.DUMBBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=29,
-            name="Rack carry (barbell)",
-            movement_id=29,
-            equipment_type=EquipmentType.BARBELL,
-            grip_type=GripType.NEUTRAL,
-        ),
-
-        # Rotation
-        ExerciseDefinition(
-            id=30,
-            name="Cable woodchop (high to low)",
-            movement_id=30,
-            equipment_type=EquipmentType.CABLE_SINGLE_D_HANDLE,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=31,
-            name="Pallof press",
-            movement_id=31,
-            equipment_type=EquipmentType.CABLE,
-            grip_type=GripType.NEUTRAL,
-        ),
-        ExerciseDefinition(
-            id=32,
-            name="Russian twist (medicine ball)",
-            movement_id=32,
-            equipment_type=EquipmentType.MEDICINE_BALL,
-            grip_type=GripType.NEUTRAL,
-        ),
+            id=id_,
+            name=name,
+            movement_id=movement_id,
+            equipment_type=equipment,
+            grip_type=grip,
+            angle=angle,
+        )
+        for id_, name, movement_id, equipment, grip, angle in EXERCISE_DEFINITIONS
     ]
 
 
-def _exercise_muscle_links():
-    links = []
-
-    # ---------- Squats ----------
-    # Back squat
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.QUADS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.GLUTES, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.HAMSTRINGS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.LOWER_BACK, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=1, muscle=Muscle.ABS, emphasis=0.25),
-    ])
-
-    # Front squat (more quad-dominant, still heavy glutes/core)
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.QUADS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.GLUTES, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.ABS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.LOWER_BACK, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=2, muscle=Muscle.HAMSTRINGS, emphasis=0.25),
-    ])
-
-    # Goblet squat
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.QUADS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.GLUTES, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.ABS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=3, muscle=Muscle.ADDUCTORS, emphasis=0.25),  # if you add ADDUCTORS enum
-    ])
-
-    # ---------- Hinges ----------
-    # Conventional deadlift
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.HAMSTRINGS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.GLUTES, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.LOWER_BACK, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.TRAPS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.FOREARMS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=4, muscle=Muscle.ABS, emphasis=0.5),
-    ])
-
-    # Romanian deadlift
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.HAMSTRINGS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.GLUTES, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.LOWER_BACK, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=5, muscle=Muscle.FOREARMS, emphasis=0.25),
-    ])
-
-    # Kettlebell swing
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=6, muscle=Muscle.HAMSTRINGS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=6, muscle=Muscle.GLUTES, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=6, muscle=Muscle.LOWER_BACK, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=6, muscle=Muscle.ABS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=6, muscle=Muscle.FRONT_DELTS, emphasis=0.25),
-    ])
-
-    # ---------- Lunges ----------
-    # Walking lunge
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=7, muscle=Muscle.QUADS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=7, muscle=Muscle.GLUTES, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=7, muscle=Muscle.HAMSTRINGS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=7, muscle=Muscle.CALVES, emphasis=0.25),
-        ExerciseMuscleLink(exercise_definition_id=7, muscle=Muscle.ABS, emphasis=0.25),
-    ])
-
-    # Reverse lunge
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=8, muscle=Muscle.QUADS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=8, muscle=Muscle.GLUTES, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=8, muscle=Muscle.HAMSTRINGS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=8, muscle=Muscle.CALVES, emphasis=0.25),
-    ])
-
-    # Bulgarian split squat
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=9, muscle=Muscle.QUADS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=9, muscle=Muscle.GLUTES, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=9, muscle=Muscle.HAMSTRINGS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=9, muscle=Muscle.ABS, emphasis=0.25),
-    ])
-
-    # ---------- Horizontal push ----------
-    # Barbell bench press (flat)
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=10, muscle=Muscle.CHEST_MID, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=10, muscle=Muscle.TRICEPS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=10, muscle=Muscle.FRONT_DELTS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=10, muscle=Muscle.CHEST_UPPER, emphasis=0.25),
-    ])
-
-    # Incline bench press
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=11, muscle=Muscle.CHEST_UPPER, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=11, muscle=Muscle.FRONT_DELTS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=11, muscle=Muscle.TRICEPS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=11, muscle=Muscle.CHEST_MID, emphasis=0.25),
-    ])
-
-    # Decline bench press
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=12, muscle=Muscle.CHEST_LOWER, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=12, muscle=Muscle.TRICEPS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=12, muscle=Muscle.FRONT_DELTS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=12, muscle=Muscle.CHEST_MID, emphasis=0.25),
-    ])
-
-    # Push-up
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=13, muscle=Muscle.CHEST_MID, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=13, muscle=Muscle.TRICEPS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=13, muscle=Muscle.FRONT_DELTS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=13, muscle=Muscle.ABS, emphasis=0.25),
-    ])
-
-    # Dumbbell floor press
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=14, muscle=Muscle.CHEST_MID, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=14, muscle=Muscle.TRICEPS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=14, muscle=Muscle.FRONT_DELTS, emphasis=0.5),
-    ])
-
-    # ---------- Vertical push ----------
-    # Barbell overhead press
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=15, muscle=Muscle.FRONT_DELTS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=15, muscle=Muscle.TRICEPS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=15, muscle=Muscle.CHEST_UPPER, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=15, muscle=Muscle.SIDE_DELTS, emphasis=0.25),
-        ExerciseMuscleLink(exercise_definition_id=15, muscle=Muscle.ABS, emphasis=0.25),
-    ])
-
-    # Push press
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=16, muscle=Muscle.FRONT_DELTS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=16, muscle=Muscle.TRICEPS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=16, muscle=Muscle.GLUTES, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=16, muscle=Muscle.QUADS, emphasis=0.25),
-    ])
-
-    # Seated dumbbell shoulder press
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=17, muscle=Muscle.FRONT_DELTS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=17, muscle=Muscle.SIDE_DELTS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=17, muscle=Muscle.TRICEPS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=17, muscle=Muscle.UPPER_TRAPS, emphasis=0.25),  # if you add UPPER_TRAPS
-    ])
-
-    # Machine shoulder press
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=18, muscle=Muscle.FRONT_DELTS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=18, muscle=Muscle.SIDE_DELTS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=18, muscle=Muscle.TRICEPS, emphasis=0.5),
-    ])
-
-    # ---------- Horizontal pull ----------
-    # Bent-over barbell row
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=19, muscle=Muscle.LATS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=19, muscle=Muscle.RHOMBOIDS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=19, muscle=Muscle.MID_TRAPS, emphasis=0.5),  # or TRAPS
-        ExerciseMuscleLink(exercise_definition_id=19, muscle=Muscle.REAR_DELTS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=19, muscle=Muscle.BICEPS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=19, muscle=Muscle.LOWER_BACK, emphasis=0.5),
-    ])
-
-    # Chest-supported dumbbell row
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=20, muscle=Muscle.LATS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=20, muscle=Muscle.RHOMBOIDS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=20, muscle=Muscle.REAR_DELTS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=20, muscle=Muscle.BICEPS, emphasis=0.5),
-    ])
-
-    # Seated cable row (V-bar)
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=21, muscle=Muscle.LATS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=21, muscle=Muscle.RHOMBOIDS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=21, muscle=Muscle.MID_TRAPS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=21, muscle=Muscle.BICEPS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=21, muscle=Muscle.REAR_DELTS, emphasis=0.25),
-    ])
-
-    # Inverted row
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=22, muscle=Muscle.LATS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=22, muscle=Muscle.RHOMBOIDS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=22, muscle=Muscle.REAR_DELTS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=22, muscle=Muscle.BICEPS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=22, muscle=Muscle.ABS, emphasis=0.25),
-    ])
-
-    # ---------- Vertical pull ----------
-    # Pull-up (pronated)
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=23, muscle=Muscle.LATS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=23, muscle=Muscle.RHOMBOIDS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=23, muscle=Muscle.REAR_DELTS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=23, muscle=Muscle.BICEPS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=23, muscle=Muscle.FOREARMS, emphasis=0.25),
-    ])
-
-    # Chin-up (supinated, more biceps)
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=24, muscle=Muscle.LATS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=24, muscle=Muscle.BICEPS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=24, muscle=Muscle.RHOMBOIDS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=24, muscle=Muscle.REAR_DELTS, emphasis=0.25),
-    ])
-
-    # Lat pull-down (wide grip)
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=25, muscle=Muscle.LATS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=25, muscle=Muscle.RHOMBOIDS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=25, muscle=Muscle.REAR_DELTS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=25, muscle=Muscle.BICEPS, emphasis=0.5),
-    ])
-
-    # Assisted pull-up
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=26, muscle=Muscle.LATS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=26, muscle=Muscle.BICEPS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=26, muscle=Muscle.RHOMBOIDS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=26, muscle=Muscle.REAR_DELTS, emphasis=0.25),
-    ])
-
-    # ---------- Carry ----------
-    # Farmer's carry
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=27, muscle=Muscle.FOREARMS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=27, muscle=Muscle.TRAPS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=27, muscle=Muscle.ABS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=27, muscle=Muscle.LOWER_BACK, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=27, muscle=Muscle.CALVES, emphasis=0.25),
-    ])
-
-    # Suitcase carry (anti-lateral flexion, obliques)
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=28, muscle=Muscle.FOREARMS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=28, muscle=Muscle.OBLIQUES, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=28, muscle=Muscle.ABS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=28, muscle=Muscle.LOWER_BACK, emphasis=0.5),
-    ])
-
-    # Rack carry (front rack, more upper back)
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=29, muscle=Muscle.FRONT_DELTS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=29, muscle=Muscle.TRAPS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=29, muscle=Muscle.ABS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=29, muscle=Muscle.FOREARMS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=29, muscle=Muscle.LOWER_BACK, emphasis=0.5),
-    ])
-
-    # ---------- Rotation ----------
-    # Cable woodchop
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=30, muscle=Muscle.OBLIQUES, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=30, muscle=Muscle.ABS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=30, muscle=Muscle.LATS, emphasis=0.5),
-        ExerciseMuscleLink(exercise_definition_id=30, muscle=Muscle.FRONT_DELTS, emphasis=0.25),
-    ])
-
-    # Pallof press (anti-rotation)
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=31, muscle=Muscle.OBLIQUES, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=31, muscle=Muscle.ABS, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=31, muscle=Muscle.FRONT_DELTS, emphasis=0.5),
-    ])
-
-    # Russian twist
-    links.extend([
-        ExerciseMuscleLink(exercise_definition_id=32, muscle=Muscle.OBLIQUES, emphasis=1.0),
-        ExerciseMuscleLink(exercise_definition_id=32, muscle=Muscle.ABS, emphasis=0.75),
-        ExerciseMuscleLink(exercise_definition_id=32, muscle=Muscle.HIP_FLEXORS, emphasis=0.25),  # if you add HIP_FLEXORS
-    ])
-
-    return links
+def _exercise_muscle_links() -> list[MuscleEmphasis]:
+    return [
+        MuscleEmphasis(
+            exercise_definition_id=definition_id,
+            muscle=muscle,
+            emphasis=emphasis,
+        )
+        for definition_id, items in MUSCLE_EMPHASIS.items()
+        for muscle, emphasis in items
+    ]
 
 
 def seed_domain_data(session: Session) -> None:
@@ -605,7 +189,10 @@ def seed_domain_data(session: Session) -> None:
     if already_seeded:
         return
 
+    # Flush in FK order so movements exist before the definitions that use them.
     session.add_all(_movements())
+    session.flush()
     session.add_all(_exercise_definitions())
+    session.flush()
     session.add_all(_exercise_muscle_links())
     session.commit()

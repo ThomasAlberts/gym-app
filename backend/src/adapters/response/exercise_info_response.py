@@ -15,12 +15,12 @@ class ExerciseDefinitionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ExerciseMuscleLinkResponse(BaseModel):
+class MuscleEmphasisResponse(BaseModel):
     muscle: str
     emphasis: float
 
 
 class ExercisesSinceMondayResponse(BaseModel):
     exercises: list[ExerciseWithWorkoutResponse]
-    muscle_links: dict[int, list[ExerciseMuscleLinkResponse]]
+    muscle_links: dict[int, list[MuscleEmphasisResponse]]
     muscle_strain: dict[str, float]

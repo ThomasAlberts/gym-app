@@ -1,13 +1,14 @@
 from typing import TYPE_CHECKING, Optional
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, Enum as SAEnum
-from .enums import Muscle
+from backend.src.domain.enums import Muscle
 
 if TYPE_CHECKING:
     from .exercise_definition import ExerciseDefinition
 
-class ExerciseMuscleLink(SQLModel, table=True):
-    __tablename__ = "exercise_muscle_link"
+
+class MuscleEmphasis(SQLModel, table=True):
+    __tablename__ = "muscle_emphasis"
 
     exercise_definition_id: Optional[int] = Field(
         foreign_key="exercise_definition.id", primary_key=True

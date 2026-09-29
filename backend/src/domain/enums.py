@@ -1,6 +1,5 @@
 from enum import Enum
 
-# Movement patterns
 class MovementPattern(str, Enum):
     HORIZONTAL_PUSH = "horizontal_push"
     VERTICAL_PUSH = "vertical_push"
@@ -12,7 +11,6 @@ class MovementPattern(str, Enum):
     CARRY = "carry"
     ROTATION = "rotation"
 
-# Grip type
 class GripType(str, Enum):
     PRONATED = "pronated"
     SUPINATED = "supinated"
@@ -20,13 +18,11 @@ class GripType(str, Enum):
     CLOSE = "close"
     WIDE = "wide"
 
-# Angle type
 class AngleType(str, Enum):
     FLAT = "flat"
     INCLINE = "incline"
     DECLINE = "decline"
 
-# Muscle groups (more detailed)
 class Muscle(str, Enum):
     CHEST_UPPER = "chest_upper"
     CHEST_MID = "chest_mid"
@@ -53,7 +49,6 @@ class Muscle(str, Enum):
     ADDUCTORS = "adductors"
     ABDUCTORS = "abductors"
 
-# Equipment
 class EquipmentType(str, Enum):
     BARBELL = "barbell"
     DUMBBELL = "dumbbell"

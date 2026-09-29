@@ -3,7 +3,7 @@ import json
 from sqlmodel import Session
 
 from backend.src.adapters.dto.ai_request_dto import ExerciseIn, SuggestionOut
-from backend.src.domain.exercise_definition import ExerciseDefinition
+from backend.src.domain.entities.exercise_definition import ExerciseDefinition
 
 
 def get_suggestion_candidates(session: Session, exclude_ids: list[int]) -> list[ExerciseDefinition]:

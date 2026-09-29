@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./components/authenticator/AuthContext";
 import Navbar from "./components/navbar/Navbar";

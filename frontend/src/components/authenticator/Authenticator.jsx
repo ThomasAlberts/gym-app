@@ -1,4 +1,3 @@
-// src/components/auth/Authenticator.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";

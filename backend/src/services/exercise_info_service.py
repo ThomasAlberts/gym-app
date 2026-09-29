@@ -2,10 +2,10 @@
 from datetime import datetime, time, timedelta, timezone
 from sqlmodel import Session, select
 
-from backend.src.domain.exercise_definition import ExerciseDefinition
-from backend.src.domain.exercise_muscle_link import ExerciseMuscleLink  # adjust import path if this lives elsewhere
-from backend.src.domain.exercise import Exercise
-from backend.src.domain.workout_session import WorkoutSession
+from backend.src.domain.entities.exercise_definition import ExerciseDefinition
+from backend.src.domain.value_objects.muscle_emphasis import MuscleEmphasis  # adjust import path if this lives elsewhere
+from backend.src.domain.entities.exercise import Exercise
+from backend.src.domain.entities.workout_session import WorkoutSession
 
 
 class ExerciseInfoService:
@@ -74,9 +74,9 @@ class ExerciseInfoService:
     def get_muscle_links_by_definition_id(
         self,
         exercises: list[Exercise],
-    ) -> dict[int, list[ExerciseMuscleLink]]:
+    ) -> dict[int, list[MuscleEmphasis]]:
         """
-        Return all ExerciseMuscleLink rows for the exercise definitions
+        Return all MuscleEmphasis rows for the exercise definitions
         used in `exercises`, grouped by exercise_definition_id.
         """
         definition_ids = {
@@ -87,12 +87,12 @@ class ExerciseInfoService:
         if not definition_ids:
             return {}
 
-        statement = select(ExerciseMuscleLink).where(
-            ExerciseMuscleLink.exercise_definition_id.in_(definition_ids)
+        statement = select(MuscleEmphasis).where(
+            MuscleEmphasis.exercise_definition_id.in_(definition_ids)
         )
         links = self.session.exec(statement).all()
 
-        grouped: dict[int, list[ExerciseMuscleLink]] = {}
+        grouped: dict[int, list[MuscleEmphasis]] = {}
         for link in links:
             grouped.setdefault(link.exercise_definition_id, []).append(link)
 
@@ -102,11 +102,11 @@ class ExerciseInfoService:
     def compute_muscle_strain(
         self,
         exercises: list[Exercise],
-        muscle_links_by_definition: dict[int, list[ExerciseMuscleLink]],
+        muscle_links_by_definition: dict[int, list[MuscleEmphasis]],
     ) -> dict[str, float]:
         """
         Sum set_count * emphasis across `exercises`, grouped by leaf muscle
-        (the raw Muscle enum value on each ExerciseMuscleLink).
+        (the raw Muscle enum value on each MuscleEmphasis).
 
         Falls back to an emphasis of 1 if a link's emphasis is missing,
         so a null value doesn't drop that muscle out of the sum.

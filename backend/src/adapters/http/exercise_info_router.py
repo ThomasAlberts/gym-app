@@ -3,13 +3,13 @@ from sqlmodel import Session
 
 from backend.src.adapters.database.database import get_database
 from backend.src.adapters.response.exercise_info_response import (
-    ExerciseDefinitionResponse, ExercisesSinceMondayResponse, ExerciseMuscleLinkResponse,
+    ExerciseDefinitionResponse, ExercisesSinceMondayResponse, MuscleEmphasisResponse,
 )
 from backend.src.adapters.response.workout_response import (
     ExerciseWithWorkoutResponse,
 )
 from backend.src.core.deps import get_current_user
-from backend.src.domain.user import User
+from backend.src.domain.entities.user import User
 from backend.src.services.exercise_info_service import (
     ExerciseInfoService,
 )
@@ -107,7 +107,7 @@ def get_exercises_since_monday(
         exercises=[_to_response(exercise) for exercise in exercises],
         muscle_links={
             definition_id: [
-                ExerciseMuscleLinkResponse(muscle=link.muscle, emphasis=link.emphasis)
+                MuscleEmphasisResponse(muscle=link.muscle, emphasis=link.emphasis)
                 for link in links
             ]
             for definition_id, links in muscle_links_by_definition.items()
