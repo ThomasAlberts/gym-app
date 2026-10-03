@@ -1,26 +1,34 @@
+from datetime import datetime, timezone
 from typing import Optional
 
-from backend.src.domain.entities.refresh_token import RefreshToken as DomainRefreshToken
+from backend.src.domain.entities.refresh_token import RefreshToken
 from backend.src.adapters.database.models.refresh_token import RefreshToken as ORMRefreshToken
 
 
-def to_domain(orm_token: ORMRefreshToken) -> DomainRefreshToken:
-    return DomainRefreshToken(
-        id=orm_token.id,
-        user_id=orm_token.user_id,
-        token_hash=orm_token.token_hash,
-        expires_at=orm_token.expires_at,
-        revoked=orm_token.revoked,
-        created_at=orm_token.created_at,
+def _aware(dt: datetime) -> datetime:
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def _naive_utc(dt: datetime) -> datetime:
+    return dt.astimezone(timezone.utc).replace(tzinfo=None) if dt.tzinfo else dt
+
+
+def to_domain(row: ORMRefreshToken) -> RefreshToken:
+    return RefreshToken(
+        id=row.id,
+        user_id=row.user_id,
+        token_hash=row.token_hash,
+        expires_at=_aware(row.expires_at),
+        revoked=row.revoked,
+        created_at=_aware(row.created_at),
     )
 
 
-def to_orm(token: DomainRefreshToken, existing: Optional[ORMRefreshToken] = None) -> ORMRefreshToken:
-    orm_token = existing or ORMRefreshToken()
-    orm_token.id = token.id
-    orm_token.user_id = token.user_id
-    orm_token.token_hash = token.token_hash
-    orm_token.expires_at = token.expires_at
-    orm_token.revoked = token.revoked
-    orm_token.created_at = token.created_at
-    return orm_token
+def to_orm(token: RefreshToken, existing: Optional[ORMRefreshToken] = None) -> ORMRefreshToken:
+    row = existing or ORMRefreshToken()
+    row.user_id = token.user_id
+    row.token_hash = token.token_hash
+    row.expires_at = _naive_utc(token.expires_at)
+    row.revoked = token.revoked
+    row.created_at = _naive_utc(token.created_at)
+    return row

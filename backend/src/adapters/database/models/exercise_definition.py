@@ -30,6 +30,5 @@ class ExerciseDefinition(SQLModel, table=True):
         sa_column=SAEnum(AngleType, name="angle_type_enum")
     )
 
-    movement: "Movement" = Relationship(back_populates="exercises")
     muscles: List["MuscleEmphasis"] = Relationship(back_populates="exercise_definition")
     exercises: List["Exercise"] = Relationship(back_populates="exercise_definition")

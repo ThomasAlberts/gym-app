@@ -13,7 +13,7 @@ def exercise_definition_to_domain(orm: ORMExerciseDefinition) -> DomainExerciseD
     return DomainExerciseDefinition(
         id=orm.id,
         name=orm.name,
-        movement=movement_to_domain(orm.movement),
+        movement_id=orm.movement_id,
         equipment_type=orm.equipment_type,
         grip_type=orm.grip_type,
         angle=orm.angle,

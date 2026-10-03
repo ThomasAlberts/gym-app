@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     GOOGLE_API_KEY: str
+    COOKIE_SECURE: bool = False
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",

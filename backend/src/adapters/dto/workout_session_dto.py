@@ -1,4 +1,4 @@
-# dto/workout_dto.py
+# dto/workout_session_dto.py
 from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel, Field

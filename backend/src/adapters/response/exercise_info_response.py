@@ -9,7 +9,7 @@ class ExerciseDefinitionResponse(BaseModel):
     name: str
     movement_id: int
     equipment_type: "EquipmentType"  # of str als je enums niet direct wilt
-    grip_type: "GripType"
+    grip_type: "GripType" = None
     angle: Optional["AngleType"] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -15,5 +15,3 @@ class Movement(SQLModel, table=True):
     movement_pattern: MovementPattern = Field(
         sa_column=SAEnum(MovementPattern, name="movement_pattern_enum")
     )
-
-    exercises: List["ExerciseDefinition"] = Relationship(back_populates="movement")

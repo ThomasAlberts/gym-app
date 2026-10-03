@@ -1,22 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session
 
-from backend.src.adapters.database.database import get_database
+from backend.src.adapters.http.dependencies import get_exercise_info_service
 from backend.src.adapters.response.exercise_info_response import (
-    ExerciseDefinitionResponse, ExercisesSinceMondayResponse, MuscleEmphasisResponse,
+    ExerciseDefinitionResponse,
+    ExercisesSinceMondayResponse,
+    MuscleEmphasisResponse,
 )
-from backend.src.adapters.response.workout_response import (
-    ExerciseWithWorkoutResponse,
-)
+from backend.src.adapters.response.workout_response import ExerciseWithWorkoutResponse
 from backend.src.core.deps import get_current_user
+from backend.src.domain.entities.exercise import Exercise
 from backend.src.domain.entities.user import User
-from backend.src.services.exercise_info_service import (
-    ExerciseInfoService,
-)
+from backend.src.services.exercise_info_service import ExerciseInfoService
 
-
-# Contains information needed to create exercises:
-# exercise definitions, movements, muscles, links, and enums.
 
 router = APIRouter(
     prefix="/exercise_info",
@@ -28,12 +23,13 @@ router = APIRouter(
     "/exercise_definition/all",
     response_model=list[ExerciseDefinitionResponse],
 )
-def get_exercise_definitions(
-    session: Session = Depends(get_database),
+def get_all_exercise_definition(
+    service: ExerciseInfoService = Depends(get_exercise_info_service),
 ):
-    service = ExerciseInfoService(session)
-
-    return service.get_all_exercise_definitions()
+    return [
+        ExerciseDefinitionResponse.model_validate(definition, from_attributes=True)
+        for definition in service.get_all_exercise_definitions()
+    ]
 
 
 @router.get(
@@ -41,19 +37,11 @@ def get_exercise_definitions(
     response_model=list[ExerciseWithWorkoutResponse],
 )
 def get_all_exercises(
-    session: Session = Depends(get_database),
+    service: ExerciseInfoService = Depends(get_exercise_info_service),
     user: User = Depends(get_current_user),
 ):
-    service = ExerciseInfoService(session)
-
-    exercises = service.get_all_exercises_for_user(
-        user_id=user.id,
-    )
-
-    return [
-        _to_response(exercise)
-        for exercise in exercises
-    ]
+    items = service.get_all_exercises_for_user(user_id=user.id)
+    return [_to_response(*item) for item in items]
 
 
 @router.get(
@@ -67,21 +55,11 @@ def get_recent_exercises(
         le=365,
         description="Number of previous days to search.",
     ),
-    session: Session = Depends(get_database),
+    service: ExerciseInfoService = Depends(get_exercise_info_service),
     user: User = Depends(get_current_user),
 ):
-    service = ExerciseInfoService(session)
-
-    exercises = service.get_exercises_since(
-        user_id=user.id,
-        days=days,
-    )
-    for x in exercises:
-        print(_to_response(x))
-    return [
-        _to_response(exercise)
-        for exercise in exercises
-    ]
+    items = service.get_exercises_since(user_id=user.id, days=days)
+    return [_to_response(*item) for item in items]
 
 
 @router.get(
@@ -89,28 +67,22 @@ def get_recent_exercises(
     response_model=ExercisesSinceMondayResponse,
 )
 def get_exercises_since_monday(
-    session: Session = Depends(get_database),
+    service: ExerciseInfoService = Depends(get_exercise_info_service),
     user: User = Depends(get_current_user),
 ):
-    service = ExerciseInfoService(session)
+    items = service.get_exercises_since_monday(user_id=user.id)
 
-    exercises = service.get_exercises_since_monday(
-        user_id=user.id,
-    )
-
-    muscle_links_by_definition = service.get_muscle_links_by_definition_id(exercises)
-    muscle_strain = service.compute_muscle_strain(
-        exercises, muscle_links_by_definition
-    )
+    emphasis_by_definition = service.get_muscle_emphasis_by_definition_id(items)
+    muscle_strain = service.compute_muscle_strain(items, emphasis_by_definition)
 
     return ExercisesSinceMondayResponse(
-        exercises=[_to_response(exercise) for exercise in exercises],
+        exercises=[_to_response(*item) for item in items],
         muscle_links={
             definition_id: [
-                MuscleEmphasisResponse(muscle=link.muscle, emphasis=link.emphasis)
-                for link in links
+                MuscleEmphasisResponse(muscle=m.muscle, emphasis=m.emphasis)
+                for m in muscles
             ]
-            for definition_id, links in muscle_links_by_definition.items()
+            for definition_id, muscles in emphasis_by_definition.items()
         },
         muscle_strain=muscle_strain,
     )
@@ -135,48 +107,28 @@ def get_last_exercises_for_definition(
             "the workout currently being edited."
         ),
     ),
-    session: Session = Depends(get_database),
+    service: ExerciseInfoService = Depends(get_exercise_info_service),
     user: User = Depends(get_current_user),
 ):
-    service = ExerciseInfoService(session)
-
     try:
-        exercises = (
-            service.get_last_exercises_for_definition(
-                user_id=user.id,
-                exercise_definition_id=(
-                    exercise_definition_id
-                ),
-                limit=limit,
-                exclude_workout_session_id=(
-                    exclude_workout_session_id
-                ),
-            )
+        items = service.get_last_exercises_for_definition(
+            user_id=user.id,
+            exercise_definition_id=exercise_definition_id,
+            limit=limit,
+            exclude_workout_session_id=exclude_workout_session_id,
         )
     except ValueError as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=str(exc),
-        ) from exc
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    return [
-        _to_response(exercise)
-        for exercise in exercises
-    ]
+    return [_to_response(*item) for item in items]
 
 
-def _to_response(
-    exercise,
-) -> ExerciseWithWorkoutResponse:
+def _to_response(exercise: Exercise, workout_started_at) -> ExerciseWithWorkoutResponse:
     return ExerciseWithWorkoutResponse(
         id=exercise.id,
-        exercise_definition_id=(
-            exercise.exercise_definition_id
-        ),
+        exercise_definition_id=exercise.exercise_definition_id,
         notes=exercise.notes,
         exercise_sets=exercise.exercise_sets,
         workout_id=exercise.workout_session_id,
-        workout_started_at=(
-            exercise.workout_session.started_at
-        ),
+        workout_started_at=workout_started_at,
     )

@@ -156,6 +156,7 @@ export default function MuscleMap() {
       try {
         const res = await api.get("/exercise_info/exercise/since-monday");
         if (cancelled) return;
+        console.log(res)
         setLeafStrain(res.data?.muscle_strain || {});
       } catch (e) {
         console.error(e);

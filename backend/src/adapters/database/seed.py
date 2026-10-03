@@ -183,16 +183,15 @@ def _exercise_muscle_links() -> list[MuscleEmphasis]:
 
 
 def seed_domain_data(session: Session) -> None:
-    """Populate reference data (movements, exercise definitions, muscle links)
-    if the database is empty. Safe to call on every app startup."""
-    already_seeded = session.exec(select(Movement)).first() is not None
-    if already_seeded:
-        return
+    if session.exec(select(Movement)).first() is None:
+        session.add_all(_movements())
+        session.flush()
 
-    # Flush in FK order so movements exist before the definitions that use them.
-    session.add_all(_movements())
-    session.flush()
-    session.add_all(_exercise_definitions())
-    session.flush()
-    session.add_all(_exercise_muscle_links())
+    if session.exec(select(ExerciseDefinition)).first() is None:
+        session.add_all(_exercise_definitions())
+        session.flush()
+
+    if session.exec(select(MuscleEmphasis)).first() is None:
+        session.add_all(_exercise_muscle_links())
+
     session.commit()

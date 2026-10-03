@@ -8,9 +8,16 @@ class UnknownExerciseDefinition(DomainError):
         super().__init__(f"exercise_definition_id(s) {self.ids} do not exist")
 
 
-class InvalidWorkout(DomainError):
+class InvalidWorkoutSession(DomainError):
     pass
 
 
 class InvalidAiResponse(DomainError):
     pass
+
+class AiGenerationFailed(Exception):
+    """The AI provider call failed (network, quota, auth, etc.)."""
+
+
+class EmptyCurrentExercises(Exception):
+    """Suggestions requested without any current exercises."""

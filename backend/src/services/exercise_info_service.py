@@ -1,133 +1,71 @@
-# services/workout_service.py
 from datetime import datetime, time, timedelta, timezone
-from sqlmodel import Session, select
+from typing import Callable, Optional
 
 from backend.src.domain.entities.exercise_definition import ExerciseDefinition
-from backend.src.domain.value_objects.muscle_emphasis import MuscleEmphasis  # adjust import path if this lives elsewhere
 from backend.src.domain.entities.exercise import Exercise
-from backend.src.domain.entities.workout_session import WorkoutSession
+from backend.src.domain.enums import Muscle
+from backend.src.domain.muscle_strain import compute_muscle_strain as _compute_muscle_strain
+from backend.src.domain.repositories import ExerciseDefinitionRepository, ExerciseRepository
+from backend.src.domain.value_objects.muscle_emphasis import MuscleEmphasis
+
+
+HISTORY_WINDOW_DAYS = 60
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def start_of_week(now: datetime) -> datetime:
+    monday = now.date() - timedelta(days=now.weekday())
+    return datetime.combine(monday, time.min, tzinfo=timezone.utc)
 
 
 class ExerciseInfoService:
-    def __init__(self, session: Session):
-        self.session = session
-
-
-    def get_all_exercise_definitions(self):
-        return self.session.query(ExerciseDefinition).all()
-
-
-    def get_all_exercises_for_user(self, user_id: int) -> list[Exercise]:
-        statement = (
-            select(Exercise)
-            .join(WorkoutSession, Exercise.workout_session_id == WorkoutSession.id)
-            .where(WorkoutSession.user_id == user_id)
-            .order_by(WorkoutSession.started_at.desc())
-        )
-        return self.session.exec(statement).all()
-
-
-    def get_exercises_since_monday(
+    def __init__(
         self,
-        user_id: int,
-    ) -> list[Exercise]:
-        """
-        Return all exercises performed from the most recent Monday
-        at 00:00 until the current moment.
-
-        If today is Monday, this returns exercises from today at 00:00
-        until now.
-        """
-
-        now = datetime.now(timezone.utc)
-
-        # weekday(): Monday = 0, Tuesday = 1, ..., Sunday = 6
-        monday_date = (
-            now.date() - timedelta(days=now.weekday())
-        )
-
-        monday_start = datetime.combine(
-            monday_date,
-            time.min,
-            tzinfo=timezone.utc,
-        )
-
-        statement = (
-            select(Exercise)
-            .join(
-                WorkoutSession,
-                Exercise.workout_session_id == WorkoutSession.id,
-            )
-            .where(
-                WorkoutSession.user_id == user_id,
-                WorkoutSession.started_at >= monday_start,
-                WorkoutSession.started_at <= now,
-            )
-            .order_by(
-                WorkoutSession.started_at.desc()
-            )
-        )
-
-        return list(self.session.exec(statement).all())
+        exercises: ExerciseRepository,
+        exercise_definitions: ExerciseDefinitionRepository,
+        clock: Callable[[], datetime] = _utcnow,
+    ):
+        self._exercises = exercises
+        self._exercise_definitions = exercise_definitions
+        self._clock = clock
 
 
-    def get_muscle_links_by_definition_id(
-        self,
-        exercises: list[Exercise],
+    def get_all_exercise_definitions(self) -> list[ExerciseDefinition]:
+        return self._exercise_definitions.list_all()
+
+
+    def get_all_exercises_for_user(self, user_id: int) -> list[tuple[Exercise, Optional[datetime]]]:
+        return self._exercises.list_for_user(user_id)
+
+
+    def get_exercises_since(self, user_id: int, days: int) -> list[tuple[Exercise, Optional[datetime]]]:
+        now = self._clock()
+        return self._exercises.list_for_user_between(user_id, now - timedelta(days=days), now)
+
+
+    def get_exercises_since_monday(self, user_id: int) -> list[tuple[Exercise, Optional[datetime]]]:
+        now = self._clock()
+        return self._exercises.list_for_user_between(user_id, start_of_week(now), now)
+
+
+    def get_muscle_emphasis_by_definition_id(
+        self, items: list[tuple[Exercise, Optional[datetime]]]
     ) -> dict[int, list[MuscleEmphasis]]:
-        """
-        Return all MuscleEmphasis rows for the exercise definitions
-        used in `exercises`, grouped by exercise_definition_id.
-        """
-        definition_ids = {
-            exercise.exercise_definition_id
-            for exercise in exercises
-        }
-
-        if not definition_ids:
+        ids = {exercise.exercise_definition_id for exercise, _ in items}
+        if not ids:
             return {}
-
-        statement = select(MuscleEmphasis).where(
-            MuscleEmphasis.exercise_definition_id.in_(definition_ids)
-        )
-        links = self.session.exec(statement).all()
-
-        grouped: dict[int, list[MuscleEmphasis]] = {}
-        for link in links:
-            grouped.setdefault(link.exercise_definition_id, []).append(link)
-
-        return grouped
+        return self._exercise_definitions.get_muscle_emphasis(ids)
 
 
     def compute_muscle_strain(
         self,
-        exercises: list[Exercise],
-        muscle_links_by_definition: dict[int, list[MuscleEmphasis]],
-    ) -> dict[str, float]:
-        """
-        Sum set_count * emphasis across `exercises`, grouped by leaf muscle
-        (the raw Muscle enum value on each MuscleEmphasis).
-
-        Falls back to an emphasis of 1 if a link's emphasis is missing,
-        so a null value doesn't drop that muscle out of the sum.
-        """
-        strain: dict[str, float] = {}
-
-        for exercise in exercises:
-            set_count = len(exercise.exercise_sets or [])
-            if not set_count:
-                continue
-
-            links = muscle_links_by_definition.get(
-                exercise.exercise_definition_id, []
-            )
-            for link in links:
-                emphasis = link.emphasis if link.emphasis is not None else 1
-                strain[link.muscle] = (
-                    strain.get(link.muscle, 0) + set_count * emphasis
-                )
-
-        return strain
+        items: list[tuple[Exercise, Optional[datetime]]],
+        emphasis_by_definition: dict[int, list[MuscleEmphasis]],
+    ) -> dict[Muscle, float]:
+        return _compute_muscle_strain([exercise for exercise, _ in items], emphasis_by_definition)
 
 
     def get_last_exercises_for_definition(
@@ -135,55 +73,16 @@ class ExerciseInfoService:
         user_id: int,
         exercise_definition_id: int,
         limit: int = 3,
-        exclude_workout_session_id: int | None = None,
-    ) -> list[Exercise]:
-        """
-        Return the latest exercises for one exercise definition,
-        from the most recent Monday until now.
-
-        If today is Monday, the range is:
-            today at 00:00 <= started_at <= now
-        """
-
+        exclude_workout_session_id: Optional[int] = None,
+    ) -> list[tuple[Exercise, Optional[datetime]]]:
         if limit < 1:
             raise ValueError("limit must be at least 1")
-
-        now = datetime.now(timezone.utc)
-
-        monday_date = (
-            now.date() - timedelta(days=now.weekday())
+        now = self._clock()
+        return self._exercises.list_for_definition_between(
+            user_id,
+            exercise_definition_id,
+            now - timedelta(days=HISTORY_WINDOW_DAYS),
+            now,
+            limit,
+            exclude_workout_session_id,
         )
-
-        monday_start = datetime.combine(
-            monday_date,
-            time.min,
-            tzinfo=timezone.utc,
-        )
-
-        statement = (
-            select(Exercise)
-            .join(
-                WorkoutSession,
-                Exercise.workout_session_id == WorkoutSession.id,
-            )
-            .where(
-                WorkoutSession.user_id == user_id,
-                Exercise.exercise_definition_id == exercise_definition_id,
-                WorkoutSession.started_at >= monday_start,
-                WorkoutSession.started_at <= now,
-            )
-        )
-
-        if exclude_workout_session_id is not None:
-            statement = statement.where(
-                Exercise.workout_session_id
-                != exclude_workout_session_id
-            )
-
-        statement = (
-            statement
-            .order_by(WorkoutSession.started_at.desc())
-            .limit(limit)
-        )
-
-        return list(self.session.exec(statement).all())

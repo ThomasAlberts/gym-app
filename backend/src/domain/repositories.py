@@ -1,9 +1,12 @@
+from datetime import datetime
 from typing import Protocol, Optional, List
 
 from backend.src.domain.entities.user import User
 from backend.src.domain.entities.refresh_token import RefreshToken
 from backend.src.domain.entities.workout_session import WorkoutSession
+from backend.src.domain.entities.exercise import Exercise
 from backend.src.domain.entities.exercise_definition import ExerciseDefinition
+from backend.src.domain.value_objects.muscle_emphasis import MuscleEmphasis
 
 
 class UserRepository(Protocol):
@@ -19,11 +22,35 @@ class RefreshTokenRepository(Protocol):
 
 
 class WorkoutSessionRepository(Protocol):
-    def get_by_id(self, session_id: int) -> Optional[WorkoutSession]: ...
+    def get_by_id(self, workout_session_id: int) -> Optional[WorkoutSession]: ...
     def list_for_user(self, user_id: int) -> List[WorkoutSession]: ...
-    def save(self, session: WorkoutSession) -> WorkoutSession: ...
+    def save(self, workout_session: WorkoutSession) -> WorkoutSession: ...
+    def delete(self, workout_session_id: int) -> None: ...
 
 
-class ExerciseCatalogRepository(Protocol):
+class ExerciseRepository(Protocol):
+    def list_for_user(self, user_id: int) -> List[Exercise]: ...
+
+    def list_for_user_between(
+        self, user_id: int, start: datetime, end: datetime
+    ) -> List[Exercise]: ...
+
+    def list_for_definition_between(
+        self,
+        user_id: int,
+        definition_id: int,
+        start: datetime,
+        end: datetime,
+        limit: int,
+        exclude_workout_session_id: Optional[int] = None,
+    ) -> List[Exercise]: ...
+
+
+class ExerciseDefinitionRepository(Protocol):
     def get_by_id(self, definition_id: int) -> Optional[ExerciseDefinition]: ...
     def list_all(self) -> List[ExerciseDefinition]: ...
+    def list_excluding(self, exclude_ids: list[int]) -> List[ExerciseDefinition]: ...
+    def find_missing_ids(self, ids: set[int]) -> set[int]: ...
+    def get_muscle_emphasis(
+        self, definition_ids: set[int]
+    ) -> dict[int, List[MuscleEmphasis]]: ...

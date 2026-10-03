@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 
 from backend.src.domain.errors import (
     InvalidAiResponse,
-    InvalidWorkout,
+    InvalidWorkoutSession,
     UnknownExerciseDefinition,
 )
 
@@ -15,8 +15,8 @@ def register_error_handlers(app: FastAPI) -> None:
     async def _unknown_definition(_: Request, exc: UnknownExerciseDefinition):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
-    @app.exception_handler(InvalidWorkout)
-    async def _invalid_workout(_: Request, exc: InvalidWorkout):
+    @app.exception_handler(InvalidWorkoutSession)
+    async def _invalid_workout(_: Request, exc: InvalidWorkoutSession):
         return JSONResponse(status_code=422, content={"detail": str(exc)})
 
     @app.exception_handler(InvalidAiResponse)
