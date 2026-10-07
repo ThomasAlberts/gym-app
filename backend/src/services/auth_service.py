@@ -16,16 +16,16 @@ class InvalidRefreshToken(Exception): ...
 
 
 @dataclass(frozen=True)
-class AuthTokens:
+class AuthToken:
     user: User
     access_token: str
     refresh_token: str
 
 
 class AuthService:
-    def __init__(self, users: UserRepository, tokens: RefreshTokenRepository):
-        self._users = users
-        self._tokens = tokens
+    def __init__(self, user_repository: UserRepository, refresh_token_repository: RefreshTokenRepository):
+        self.user_repository = user_repository
+        self.refresh_token_repository = refresh_token_repository
 
     def register(
         self,
@@ -34,9 +34,9 @@ class AuthService:
         first_name: Optional[str] = None,
         last_name: Optional[str] = None,
     ) -> User:
-        if self._users.get_by_email(email):
+        if self.user_repository.get_by_email(email):
             raise EmailAlreadyRegistered()
-        return self._users.save(
+        return self.user_repository.save(
             User(
                 id=None,
                 email=email,
@@ -46,32 +46,32 @@ class AuthService:
             )
         )
 
-    def login(self, email: str, password: str) -> AuthTokens:
-        user = self._users.get_by_email(email)
+    def login(self, email: str, password: str) -> AuthToken:
+        user = self.user_repository.get_by_email(email)
         if not user or not verify_password(password, user.hashed_password):
             raise InvalidCredentials()
-        return self._issue(user)
+        return self._create_session(user)
 
-    def refresh(self, raw_token: str) -> AuthTokens:
-        record = self._tokens.get_by_hash(hash_token(raw_token))
+    def refresh(self, raw_token: str) -> AuthToken:
+        record = self.refresh_token_repository.get_by_hash(hash_token(raw_token))
         if not record or not record.is_valid():
             raise InvalidRefreshToken()
-        user = self._users.get_by_id(record.user_id)
+        user = self.user_repository.get_by_id(record.user_id)
         if not user:
             raise InvalidRefreshToken()
         record.revoke()  # rotation: old token is single-use
-        self._tokens.save(record)
-        return self._issue(user)
+        self.refresh_token_repository.save(record)
+        return self._create_session(user)
 
     def logout(self, raw_token: Optional[str]) -> None:
         if not raw_token:
             return
-        record = self._tokens.get_by_hash(hash_token(raw_token))
+        record = self.refresh_token_repository.get_by_hash(hash_token(raw_token))
         if record:
             record.revoke()
-            self._tokens.save(record)
+            self.refresh_token_repository.save(record)
 
-    def _issue(self, user: User) -> AuthTokens:
+    def _create_session(self, user: User) -> AuthToken:
         access = create_access_token(
             {"sub": str(user.id)},
             secret=settings.JWT_SECRET,
@@ -79,7 +79,7 @@ class AuthService:
             algorithm=settings.JWT_ALGORITHM,
         )
         raw = create_refresh_token()
-        self._tokens.save(
+        self.refresh_token_repository.save(
             RefreshToken(
                 id=None,
                 user_id=user.id,
@@ -88,4 +88,4 @@ class AuthService:
                 + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
             )
         )
-        return AuthTokens(user, access, raw)
+        return AuthToken(user, access, raw)
