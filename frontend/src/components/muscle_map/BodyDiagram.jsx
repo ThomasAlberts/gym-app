@@ -129,56 +129,56 @@ export default function BodyDiagram({
     );
   };
 
-    const muscleStaircase = (id, x, y, w, h, side, key) => {
-    const isHovered = hoveredId === id;
-    const isSelected = selectedId === id;
-
-    let stroke = OUTLINE;
-    let strokeWidth = OUTLINE_W;
-    if (isSelected) { stroke = "#2f6fa3"; strokeWidth = OUTLINE_W + 2; }
-    if (isHovered) { stroke = "#fff6e6"; strokeWidth = OUTLINE_W + 2; }
-
-    const activeH = h / 3; // only the top third carries the muscle indicator
-    const steps = [
-      { wFrac: 1.0, opacity: 1.0 },
-      { wFrac: 0.66, opacity: 0.75 },
-      { wFrac: 0.33, opacity: 0.5 },
-    ];
-    const stepH = activeH / steps.length;
-
-    return (
-      <g
-        key={key || id}
-        onPointerEnter={() => { setHover({ id, x, y, w, h }); onHoverMuscle?.(id); }}
-        onPointerLeave={() => { setHover((c) => (c?.id === id ? null : c)); onHoverMuscle?.(null); }}
-        onPointerCancel={() => { setHover((c) => (c?.id === id ? null : c)); onHoverMuscle?.(null); }}
-        onClick={() => onSelectMuscle?.(selectedId === id ? null : id)}
-        style={{ cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
-      >
-        {/* skin base fills the whole column so the lower 2/3 doesn't leave a gap */}
-        <rect x={x} y={y} width={w} height={h} fill={SKIN} stroke={OUTLINE} strokeWidth={OUTLINE_W} />
-
-        {steps.map((s, i) => {
-          const sw = w * s.wFrac;
-          const rx = side === "left" ? x : x + (w - sw);
-          const ry = y + i * stepH;
-          return (
-            <g key={i} opacity={s.opacity}>
-              <rect x={rx} y={ry} width={sw} height={stepH} fill={colorFor(id)} stroke={stroke} strokeWidth={strokeWidth} />
-              {shade(rx, ry, sw, stepH)}
-            </g>
-          );
-        })}
-
-        {isSelected && !isHovered && (
-          <rect x={x} y={y} width={w} height={activeH} fill="#3a86c8" opacity="0.16" pointerEvents="none" />
-        )}
-        {isHovered && (
-          <rect x={x} y={y} width={w} height={activeH} fill="#ffffff" opacity="0.22" pointerEvents="none" />
-        )}
-      </g>
-    );
-  };
+  //   const muscleStaircase = (id, x, y, w, h, side, key) => {
+  //   const isHovered = hoveredId === id;
+  //   const isSelected = selectedId === id;
+  //
+  //   let stroke = OUTLINE;
+  //   let strokeWidth = OUTLINE_W;
+  //   if (isSelected) { stroke = "#2f6fa3"; strokeWidth = OUTLINE_W + 2; }
+  //   if (isHovered) { stroke = "#fff6e6"; strokeWidth = OUTLINE_W + 2; }
+  //
+  //   const activeH = h / 3; // only the top third carries the muscle indicator
+  //   const steps = [
+  //     { wFrac: 1.0, opacity: 1.0 },
+  //     { wFrac: 0.66, opacity: 0.75 },
+  //     { wFrac: 0.33, opacity: 0.5 },
+  //   ];
+  //   const stepH = activeH / steps.length;
+  //
+  //   return (
+  //     <g
+  //       key={key || id}
+  //       onPointerEnter={() => { setHover({ id, x, y, w, h }); onHoverMuscle?.(id); }}
+  //       onPointerLeave={() => { setHover((c) => (c?.id === id ? null : c)); onHoverMuscle?.(null); }}
+  //       onPointerCancel={() => { setHover((c) => (c?.id === id ? null : c)); onHoverMuscle?.(null); }}
+  //       onClick={() => onSelectMuscle?.(selectedId === id ? null : id)}
+  //       style={{ cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+  //     >
+  //       {/* skin base fills the whole column so the lower 2/3 doesn't leave a gap */}
+  //       <rect x={x} y={y} width={w} height={h} fill={SKIN} stroke={OUTLINE} strokeWidth={OUTLINE_W} />
+  //
+  //       {steps.map((s, i) => {
+  //         const sw = w * s.wFrac;
+  //         const rx = side === "left" ? x : x + (w - sw);
+  //         const ry = y + i * stepH;
+  //         return (
+  //           <g key={i} opacity={s.opacity}>
+  //             <rect x={rx} y={ry} width={sw} height={stepH} fill={colorFor(id)} stroke={stroke} strokeWidth={strokeWidth} />
+  //             {shade(rx, ry, sw, stepH)}
+  //           </g>
+  //         );
+  //       })}
+  //
+  //       {isSelected && !isHovered && (
+  //         <rect x={x} y={y} width={w} height={activeH} fill="#3a86c8" opacity="0.16" pointerEvents="none" />
+  //       )}
+  //       {isHovered && (
+  //         <rect x={x} y={y} width={w} height={activeH} fill="#ffffff" opacity="0.22" pointerEvents="none" />
+  //       )}
+  //     </g>
+  //   );
+  // };
 
   const muscleShape = (id, d, box, key) => {
     const isHovered = hoveredId === id;
