@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios.js";
+import {PageLayout} from "../components/page_styling/PageLayout.jsx";
 
 export default function WorkoutPlanner() {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ export default function WorkoutPlanner() {
   if (error) return <p style={{ color: "crimson" }}>{error}</p>;
 
   return (
-    <div>
+    <PageLayout>
       <div
         style={{
           display: "flex",
@@ -97,6 +98,6 @@ export default function WorkoutPlanner() {
           {completed.map((w) => renderRow(w, () => navigate(`/workout/${w.id}`), "View"))}
         </>
       )}
-    </div>
+    </PageLayout>
   );
 }

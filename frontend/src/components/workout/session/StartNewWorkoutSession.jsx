@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios"; // pas dit pad aan naar waar jouw axios instance daadwerkelijk staat
+import api from "../../../api/axios.js";
 
-export default function CreateWorkout() {
+export default function StartNewWorkoutSession() {
   const navigate = useNavigate();
   const [starting, setStarting] = useState(false);
 
@@ -23,11 +23,8 @@ export default function CreateWorkout() {
   };
 
   return (
-    <>
-      <h2>Workout time 💪🏋️‍♀️</h2>
-      <button onClick={startWorkout} disabled={starting}>
-        {starting ? "Starten..." : "Start Workout Session"}
-      </button>
-    </>
+        <button onClick={startWorkout} disabled={starting}>
+          {starting ? "Starten..." : "Start new workout session"}
+        </button>
   );
 }

@@ -1,18 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import {PageLayout} from "../components/page_styling/PageLayout.jsx";
+import StartNewWorkoutSession from "../components/workout/session/StartNewWorkoutSession.jsx";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [workouts, setWorkouts] = useState([]);
   const [allExercises, setAllExercises] = useState([]);
   const [definitions, setDefinitions] = useState([]);
-  const [recentExercises, setRecentExercises] = useState([]);
   const [days, setDays] = useState(7);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadAll = async (daysBack) => {
+  const loadAll = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -38,11 +39,6 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDaysChange = (value) => {
-    setDays(value);
-    loadAll(value);
-  };
-
   const definitionById = useMemo(() => {
     const map = new Map();
     definitions.forEach((d) => map.set(d.id, d));
@@ -52,9 +48,6 @@ export default function Dashboard() {
   const getExerciseName = (ex) =>
     definitionById.get(ex.exercise_definition_id)?.name || `#${ex.exercise_definition_id}`;
 
-  // A single set's contribution to total weight lifted.
-  // Assumes each set object has `weight` and `reps` fields; falls back
-  // gracefully if either is missing (e.g. bodyweight sets with no weight).
   const setWeight = (set) => (Number(set?.weight) || 0) * (Number(set?.reps) || 1);
 
   const getExerciseTotals = (ex) => {
@@ -82,70 +75,73 @@ export default function Dashboard() {
   if (error) return <p style={{ color: "crimson" }}>{error}</p>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <h2>Dashboard</h2>
-      <button onClick={() => navigate("/workout/planner")}>Plan a Workout</button>
+    <PageLayout>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <h2>Dashboard</h2>
+        <StartNewWorkoutSession/>
+        <button onClick={() => navigate("/workout/planner")}>Plan future workouts</button>
 
-      <section>
-        <h3>All your workouts ({workouts.length})</h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {workouts.map((w) => {
-            const { totalSets, totalWeight } = getWorkoutTotals(w);
-            return (
-              <div
-                key={w.id}
-                onClick={() => navigate(`/workout/${w.id}`)}
-                style={{ border: "1px solid #ccc", padding: 8, cursor: "pointer" }}
-              >
-                {new Date(w.started_at).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "2-digit",
-                })}
-                {w.name ? ` — ${w.name}` : ""} —{" "}
-                {w.ended_at ? "completed" : "in progress / not finished"} —{" "}
-                {w.exercises.length} exercises —{" "}
-                {totalSets} total sets —{" "}
-                {totalWeight.toLocaleString()} kg total weight
-              </div>
-            );
-          })}
-          {workouts.length === 0 && <p>No workouts yet.</p>}
-        </div>
-      </section>
+        <section>
+          <h3>All your workouts ({workouts.length})</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {workouts.map((w) => {
+              const { totalSets, totalWeight } = getWorkoutTotals(w);
+              return (
+                <div
+                  key={w.id}
+                  onClick={() => navigate(`/workout/${w.id}`)}
+                  style={{ border: "1px solid #ccc", padding: 8, cursor: "pointer" }}
+                >
+                  {new Date(w.started_at).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "2-digit",
+                  })}
+                  {w.name ? ` — ${w.name}` : ""} —{" "}
+                  {w.ended_at ? "completed" : "in progress / not finished"} —{" "}
+                  {w.exercises.length} exercises —{" "}
+                  {totalSets} total sets —{" "}
+                  {totalWeight.toLocaleString()} kg total weight
+                </div>
+              );
+            })}
+            {workouts.length === 0 && <p>No workouts yet.</p>}
+          </div>
+        </section>
 
-      <section>
-        <h3>All exercises ({allExercises.length})</h3>
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 6 }}>
-          {allExercises.map((ex) => {
-            const { totalSets, totalWeight } = getExerciseTotals(ex);
-            return (
-              <li key={ex.id} style={{ border: "1px solid #eee", padding: 8, borderRadius: 4 }}>
-                <div>
-                  <strong>{getExerciseName(ex)}</strong>{" "}
-                  <span style={{ fontSize: 12, color: "#888" }}>
-                    —{" "}
-                    {new Date(ex.workout_started_at).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "2-digit",
-                    })}
-                  </span>
-                </div>
-                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
-                  {totalSets} set{totalSets === 1 ? "" : "s"} — {totalWeight.toLocaleString()} kg total weight
-                </div>
-                {ex.notes && (
-                  <div style={{ fontSize: 12, marginTop: 2 }}>
-                    <em>Note: {ex.notes}</em>
+        <section>
+          <h3>All exercises ({allExercises.length})</h3>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+            {allExercises.map((ex) => {
+              const { totalSets, totalWeight } = getExerciseTotals(ex);
+              return (
+                <li key={ex.id} style={{ border: "1px solid #eee", padding: 8, borderRadius: 4 }}>
+                  <div>
+                    <strong>{getExerciseName(ex)}</strong>{" "}
+                    <span style={{ fontSize: 12, color: "#888" }}>
+                      —{" "}
+                      {new Date(ex.workout_started_at).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "2-digit",
+                      })}
+                    </span>
                   </div>
-                )}
-              </li>
-            );
-          })}
-          {allExercises.length === 0 && <p>No exercises yet.</p>}
-        </ul>
-      </section>
-    </div>
+                  <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+                    {totalSets} set{totalSets === 1 ? "" : "s"} — {totalWeight.toLocaleString()} kg total weight
+                  </div>
+                  {ex.notes && (
+                    <div style={{ fontSize: 12, marginTop: 2 }}>
+                      <em>Note: {ex.notes}</em>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+            {allExercises.length === 0 && <p>No exercises yet.</p>}
+          </ul>
+        </section>
+      </div>
+    </PageLayout>
   );
 }

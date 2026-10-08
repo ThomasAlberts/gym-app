@@ -1,8 +1,9 @@
 import {PageLayout} from "../components/page_styling/PageLayout.jsx";
 
-export default function Profile() {
+export default function Welcome() {
   return (
       <PageLayout>
-        <h2>👤 Your profile</h2>
-      </PageLayout>);
+
+      </PageLayout>
+  );
 }

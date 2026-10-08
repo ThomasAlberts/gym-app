@@ -1,23 +1,8 @@
-// MuscleMap.jsx
-// Shows a body diagram colored by how much each muscle group has been
-// trained since last Monday.
-//
-// Strain is now computed server-side by GET /exercise_info/exercise/since-monday,
-// which returns { exercises, muscle_links, muscle_strain }. `muscle_strain`
-// is already a flat object keyed by leaf Muscle enum value, e.g.
-// { chest_upper: 4.5, ... } — the same shape the old client-side
-// computeMuscleStrain used to produce, so everything downstream (panel
-// aggregation, hover breakdown) is unchanged.
-
 import { useState, useEffect, useMemo, useRef } from "react";
 import api from "../api/axios.js";
 import BodyDiagram, { MUSCLE_GROUPS, STRAIN_LEVELS, strainLevel } from "../components/muscle_map/BodyDiagram.jsx";
+import {PageLayout} from "../components/page_styling/PageLayout.jsx";
 
-// Maps each backend Muscle enum value (backend/src/domain/enums.py) to the
-// diagram panel it's drawn on. Most muscles map 1:1 to their own panel;
-// chest/shoulders/back/traps have more than one entry here, which is what
-// makes those panels "expandable" — hovering them on the diagram reveals
-// the individual sub-muscles in the breakdown list below.
 const GROUP_OF = {
   chest_upper: "chest",
   chest_mid: "chest",
@@ -44,15 +29,11 @@ const GROUP_OF = {
   calves: "calves",
 };
 
-// Reverse of GROUP_OF: which leaf muscles live under each panel. A panel
-// is "expandable" in the UI when it has more than one leaf here.
 const LEAVES_OF_GROUP = Object.entries(GROUP_OF).reduce((acc, [leaf, group]) => {
   (acc[group] ||= []).push(leaf);
   return acc;
 }, {});
 
-// Human labels for leaf muscles that don't map 1:1 to a panel (i.e. the
-// ones you'd only ever see inside an expanded breakdown row).
 const LEAF_LABEL = {
   chest_upper: "Chest (upper)",
   chest_mid: "Chest (mid)",
@@ -67,19 +48,6 @@ const LEAF_LABEL = {
   mid_traps: "Traps (mid)",
 };
 
-// Weekly volume limit per LEAF muscle, in fractional "sets" (see
-// compute_muscle_strain on the backend, which sums set_count * emphasis
-// using the 1.0 primary / 0.5 secondary / 0.25 stabilizer convention).
-// A panel's own limit (used by the diagram) is just the sum of its
-// leaves' limits, so there's one source of truth instead of two numbers
-// to keep in sync.
-//
-// Values are based on published hypertrophy volume research: most lifters
-// see solid growth in the ~10-20 hard sets/week/muscle range, with smaller
-// stabilizer-heavy muscles (rear delts, obliques, rhomboids) skewed toward
-// the lower end of that range since they rarely get trained directly.
-// Schoenfeld, Ogborn & Krieger (2017), J Sports Sci — dose-response
-// meta-analysis behind the ~10+ sets/week threshold.
 const LEAF_LIMITS = {
   chest_upper: 12,
   chest_mid: 14,
@@ -94,10 +62,6 @@ const LEAF_LIMITS = {
   forearms: 12,
   abs: 16,
   obliques: 12,
-  // Traps is split into three leaves because exercises hit it differently:
-  // shrugs/carries load it generically, presses bias the upper fibers,
-  // and rows bias the mid fibers. Limits are lower per-leaf than a single
-  // combined 12-14 would be, since each is only ever a partial hit.
   traps: 6,
   upper_traps: 8,
   mid_traps: 8,
@@ -211,15 +175,13 @@ export default function MuscleMap() {
   const sinceLabel = since.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
+      <PageLayout>
         <header style={styles.header}>
           <div>
             <h2 style={styles.title}>Muscle load</h2>
             <p style={styles.subtitle}>Sets logged since {sinceLabel}</p>
           </div>
         </header>
-
         {loading ? (
           <div style={styles.statusBlock}>
             <p style={styles.statusText}>Loading muscle map…</p>
@@ -331,30 +293,12 @@ export default function MuscleMap() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </PageLayout>
   );
 }
 
 const styles = {
-  page: {
-    display: "flex",
-    justifyContent: "center",
-    padding: "24px 16px",
-    minHeight: "100vh",
-    boxSizing: "border-box",
-  },
-  card: {
-    width: "100%",
-    maxWidth: 920,
-    background: "#FFFFFF",
-    border: "1px solid #ECE6DA",
-    borderRadius: 16,
-    boxShadow: "0 1px 2px rgba(36,30,23,0.04), 0 10px 30px rgba(36,30,23,0.06)",
-    padding: "26px 28px 30px",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  },
-  header: {
+    header: {
     display: "flex",
     alignItems: "flex-start",
     justifyContent: "space-between",
