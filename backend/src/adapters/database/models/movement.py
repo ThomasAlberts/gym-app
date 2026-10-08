@@ -1,15 +1,13 @@
-from typing import Optional, List, TYPE_CHECKING
-from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional
+from sqlmodel import SQLModel, Field
 from sqlalchemy import Enum as SAEnum
 
 from backend.src.domain.enums import MovementPattern
 
-if TYPE_CHECKING:
-    from .exercise_definition import ExerciseDefinition
-
-
 class Movement(SQLModel, table=True):
+
     id: Optional[int] = Field(default=None, primary_key=True)
+
     name: str
 
     movement_pattern: MovementPattern = Field(

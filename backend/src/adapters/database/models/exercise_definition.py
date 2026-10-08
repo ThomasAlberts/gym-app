@@ -5,15 +5,15 @@ from sqlalchemy import Enum as SAEnum
 from backend.src.domain.enums import EquipmentType, GripType, AngleType
 
 if TYPE_CHECKING:
-    from .movement import Movement
     from .muscle_emphasis import MuscleEmphasis
-    from .exercise import Exercise  # same package now - no more cross-package import
+    from .exercise import Exercise
 
 
 class ExerciseDefinition(SQLModel, table=True):
     __tablename__ = "exercise_definition"
 
     id: Optional[int] = Field(default=None, primary_key=True)
+
     name: str
 
     movement_id: int = Field(foreign_key="movement.id")
@@ -31,4 +31,5 @@ class ExerciseDefinition(SQLModel, table=True):
     )
 
     muscles: List["MuscleEmphasis"] = Relationship(back_populates="exercise_definition")
+
     exercises: List["Exercise"] = Relationship(back_populates="exercise_definition")

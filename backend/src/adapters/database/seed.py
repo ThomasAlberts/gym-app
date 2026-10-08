@@ -106,17 +106,17 @@ EXERCISE_DEFINITIONS = [
 # exercise_definition_id -> [(muscle, emphasis), ...]
 MUSCLE_EMPHASIS = {
     # Squats
-    1: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.HAMSTRINGS, 0.5), (Muscle.LOWER_BACK, 0.5), (Muscle.ABS, 0.25)],
-    2: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.ABS, 0.75), (Muscle.LOWER_BACK, 0.5), (Muscle.HAMSTRINGS, 0.25)],
-    3: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.ABS, 0.5), (Muscle.ADDUCTORS, 0.25)],
+    1: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.HAMSTRINGS, 0.5), (Muscle.LOWER_BACK, 0.5), (Muscle.ABS, 0.25), (Muscle.ABDUCTORS, 0.25)],
+    2: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.ABS, 0.75), (Muscle.LOWER_BACK, 0.5), (Muscle.HAMSTRINGS, 0.25), (Muscle.ABDUCTORS, 0.25)],
+    3: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.ABS, 0.5), (Muscle.ADDUCTORS, 0.25), (Muscle.ABDUCTORS, 0.25)],
     # Hinges
     4: [(Muscle.HAMSTRINGS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.LOWER_BACK, 1.0), (Muscle.TRAPS, 0.5), (Muscle.FOREARMS, 0.5), (Muscle.ABS, 0.5)],
     5: [(Muscle.HAMSTRINGS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.LOWER_BACK, 0.5), (Muscle.FOREARMS, 0.25)],
     6: [(Muscle.HAMSTRINGS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.LOWER_BACK, 0.5), (Muscle.ABS, 0.5), (Muscle.FRONT_DELTS, 0.25)],
     # Lunges
-    7: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.HAMSTRINGS, 0.5), (Muscle.CALVES, 0.25), (Muscle.ABS, 0.25)],
-    8: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.HAMSTRINGS, 0.5), (Muscle.CALVES, 0.25)],
-    9: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.HAMSTRINGS, 0.5), (Muscle.ABS, 0.25)],
+    7: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.HAMSTRINGS, 0.5), (Muscle.CALVES, 0.25), (Muscle.ABS, 0.25), (Muscle.ABDUCTORS, 0.5)],
+    8: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 0.75), (Muscle.HAMSTRINGS, 0.5), (Muscle.CALVES, 0.25), (Muscle.ABDUCTORS, 0.5)],
+    9: [(Muscle.QUADS, 1.0), (Muscle.GLUTES, 1.0), (Muscle.HAMSTRINGS, 0.5), (Muscle.ABS, 0.25), (Muscle.ABDUCTORS, 0.5)],
     # Horizontal push
     10: [(Muscle.CHEST_MID, 1.0), (Muscle.TRICEPS, 0.75), (Muscle.FRONT_DELTS, 0.5), (Muscle.CHEST_UPPER, 0.25)],
     11: [(Muscle.CHEST_UPPER, 1.0), (Muscle.FRONT_DELTS, 0.75), (Muscle.TRICEPS, 0.5), (Muscle.CHEST_MID, 0.25)],
@@ -140,7 +140,7 @@ MUSCLE_EMPHASIS = {
     26: [(Muscle.LATS, 1.0), (Muscle.BICEPS, 0.5), (Muscle.RHOMBOIDS, 0.5), (Muscle.REAR_DELTS, 0.25)],
     # Carry
     27: [(Muscle.FOREARMS, 1.0), (Muscle.TRAPS, 0.75), (Muscle.ABS, 0.75), (Muscle.LOWER_BACK, 0.5), (Muscle.CALVES, 0.25)],
-    28: [(Muscle.FOREARMS, 1.0), (Muscle.OBLIQUES, 1.0), (Muscle.ABS, 0.75), (Muscle.LOWER_BACK, 0.5)],
+    28: [(Muscle.FOREARMS, 1.0), (Muscle.OBLIQUES, 1.0), (Muscle.ABS, 0.75), (Muscle.LOWER_BACK, 0.5), (Muscle.ABDUCTORS, 0.25)],
     29: [(Muscle.FRONT_DELTS, 0.75), (Muscle.TRAPS, 0.75), (Muscle.ABS, 0.75), (Muscle.FOREARMS, 0.5), (Muscle.LOWER_BACK, 0.5)],
     # Rotation
     30: [(Muscle.OBLIQUES, 1.0), (Muscle.ABS, 0.75), (Muscle.LATS, 0.5), (Muscle.FRONT_DELTS, 0.25)],
@@ -182,6 +182,19 @@ def _exercise_muscle_links() -> list[MuscleEmphasis]:
     ]
 
 
+def _seed_missing_muscle_links(session: Session) -> None:
+    existing = {
+        (link.exercise_definition_id, link.muscle)
+        for link in session.exec(select(MuscleEmphasis)).all()
+    }
+    missing = [
+        link
+        for link in _exercise_muscle_links()
+        if (link.exercise_definition_id, link.muscle) not in existing
+    ]
+    session.add_all(missing)
+
+
 def seed_domain_data(session: Session) -> None:
     if session.exec(select(Movement)).first() is None:
         session.add_all(_movements())
@@ -193,5 +206,7 @@ def seed_domain_data(session: Session) -> None:
 
     if session.exec(select(MuscleEmphasis)).first() is None:
         session.add_all(_exercise_muscle_links())
+
+    _seed_missing_muscle_links(session)
 
     session.commit()

@@ -28,7 +28,7 @@ def get_all_exercise_definition(
 ):
     return [
         ExerciseDefinitionResponse.model_validate(definition, from_attributes=True)
-        for definition in service.get_all_exercise_definitions()
+        for definition in service.list_exercise_definitions()
     ]
 
 
@@ -48,7 +48,7 @@ def get_all_exercises(
     "/exercise/recent",
     response_model=list[ExerciseWithWorkoutResponse],
 )
-def get_recent_exercises(
+def list_recent_exercises(
     days: int = Query(
         default=7,
         ge=1,
@@ -58,7 +58,7 @@ def get_recent_exercises(
     service: ExerciseInfoService = Depends(get_exercise_info_service),
     user: User = Depends(get_current_user),
 ):
-    items = service.get_exercises_since(user_id=user.id, days=days)
+    items = service.list_recent_exercises(user_id=user.id, days=days)
     return [_to_response(*item) for item in items]
 
 
@@ -71,8 +71,7 @@ def get_exercises_since_monday(
     user: User = Depends(get_current_user),
 ):
     items = service.get_exercises_since_monday(user_id=user.id)
-
-    emphasis_by_definition = service.get_muscle_emphasis_by_definition_id(items)
+    emphasis_by_definition = service.get_muscle_emphasis_by_exercise_definition_id(items)
     muscle_strain = service.compute_muscle_strain(items, emphasis_by_definition)
 
     return ExercisesSinceMondayResponse(
@@ -111,7 +110,7 @@ def get_last_exercises_for_definition(
     user: User = Depends(get_current_user),
 ):
     try:
-        items = service.get_last_exercises_for_definition(
+        items = service.list_exercises_for_definition(
             user_id=user.id,
             exercise_definition_id=exercise_definition_id,
             limit=limit,

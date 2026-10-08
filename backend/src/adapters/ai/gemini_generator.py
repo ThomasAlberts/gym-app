@@ -16,4 +16,5 @@ class GeminiTextGenerator:
             content = "".join(
                 p.get("text", "") if isinstance(p, dict) else str(p) for p in content
             )
+        
         return content

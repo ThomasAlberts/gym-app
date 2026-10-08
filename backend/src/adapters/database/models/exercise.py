@@ -11,12 +11,17 @@ class Exercise(SQLModel, table=True):
     __tablename__ = "exercise"
 
     id: Optional[int] = Field(default=None, primary_key=True)
+
     workout_session_id: Optional[int] = Field(default=None, foreign_key="workout_session.id")
+
     exercise_definition_id: Optional[int] = Field(default=None, foreign_key="exercise_definition.id")
+
     notes: Optional[str] = None
 
     workout_session: Optional["WorkoutSession"] = Relationship(back_populates="exercises")
+
     exercise_definition: "ExerciseDefinition" = Relationship(back_populates="exercises")
+
     exercise_sets: List["ExerciseSet"] = Relationship(
         back_populates="exercise",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},

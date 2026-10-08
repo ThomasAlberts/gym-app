@@ -13,9 +13,11 @@ class MuscleEmphasis(SQLModel, table=True):
     exercise_definition_id: Optional[int] = Field(
         foreign_key="exercise_definition.id", primary_key=True
     )
+
     muscle: Muscle = Field(
         sa_column=Column("muscle", SAEnum(Muscle, name="muscle_enum"), primary_key=True)
     )
+
     emphasis: float = Field(default=1.0)
 
     exercise_definition: "ExerciseDefinition" = Relationship(back_populates="muscles")
