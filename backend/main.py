@@ -8,7 +8,7 @@ from backend.src.adapters.database.database import engine
 from backend.src.adapters.database.seed import seed_domain_data
 from backend.src.core.config import settings
 
-from backend.src.adapters.http.workout_router import router as workout_router
+from backend.src.adapters.http.workout_session_router import router as workout_router
 from backend.src.adapters.http.exercise_info_router import router as exercise_info_router
 from backend.src.adapters.http.ai_request_router import router as ai_request_router
 from backend.src.adapters.auth.auth_router import router as auth_router

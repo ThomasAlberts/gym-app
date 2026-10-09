@@ -13,7 +13,7 @@ from backend.src.services.workout_session_service import WorkoutSessionService
 router = APIRouter(prefix="/workout", tags=["workout"])
 
 
-@router.post("/create_new", status_code=201)
+@router.post("/create_new", response_model=WorkoutResponse, status_code=201)
 def create_workout(
     dto: WorkoutCreate,
     service: WorkoutSessionService = Depends(get_workout_session_service),
@@ -57,11 +57,11 @@ def delete_workout(
 
 
 @router.get("/all", response_model=List[WorkoutResponse])
-def get_all_workouts(
+def list_workouts(
     service: WorkoutSessionService = Depends(get_workout_session_service),
     user: User = Depends(get_current_user),
 ):
-    return service.get_all_workout_sessions(user.id)
+    return service.list_workout_sessions(user.id)
 
 
 @router.get("/{workout_id}", response_model=WorkoutResponse)

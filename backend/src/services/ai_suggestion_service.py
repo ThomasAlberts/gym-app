@@ -2,11 +2,12 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from backend.src.adapters.database.repositories.exercise_definition_repository import SqlExerciseDefinitionRepository
 from backend.src.domain.entities.exercise_definition import ExerciseDefinition
 from backend.src.domain.errors import InvalidAiResponse, EmptyCurrentExercises
-from backend.src.domain.repositories import ExerciseDefinitionRepository
 
 MAX_SUGGESTIONS = 3
+
 
 class AiSuggestionService:
     def __init__(self, definitions, generator):
@@ -22,6 +23,7 @@ class AiSuggestionService:
         prompt = build_suggestion_prompt(current_exercises, candidates)
         raw = self._generator.generate(prompt)
         return parse_suggestion_response(raw, candidates)
+
 
 @dataclass(frozen=True)
 class LoggedSet:
@@ -47,7 +49,7 @@ class Suggestion:
 
 
 def get_suggestion_candidates(
-    exercise_definitions: ExerciseDefinitionRepository, exclude_ids: list[int]
+        exercise_definitions: SqlExerciseDefinitionRepository, exclude_ids: list[int]
 ) -> list[ExerciseDefinition]:
     return exercise_definitions.list_excluding(exclude_ids)
 
@@ -57,7 +59,7 @@ def _label(value: Any) -> Any:
 
 
 def _format_set(s: LoggedSet) -> str:
-    reps = s.reps if s.reps is not None else "?"      # 0 is a real value, not "unknown"
+    reps = s.reps if s.reps is not None else "?"  # 0 is a real value, not "unknown"
     weight = s.weight if s.weight is not None else "?"
     return f"{reps} reps @ {weight}"
 
@@ -78,17 +80,17 @@ def _format_candidates(defs: list[ExerciseDefinition]) -> str:
 
 
 def build_suggestion_prompt(
-    current_exercises: list[LoggedExercise], candidates: list[ExerciseDefinition]
-    ) -> str:
-        done = "\n".join(_format_exercise(e) for e in current_exercises)
-        return f"""You are a strength training assistant helping someone mid-workout_session.
-    
+        current_exercises: list[LoggedExercise], candidates: list[ExerciseDefinition]
+) -> str:
+    done = "\n".join(_format_exercise(e) for e in current_exercises)
+    return f"""You are a strength training assistant helping someone mid-workout_session.
+
     Here is what they've done so far in this session:
     {done}
-    
+
     Here are the exercises available to suggest from (you MUST only pick from this list, using the exact id):
     {_format_candidates(candidates)}
-    
+
     Pick 1 to {MAX_SUGGESTIONS} exercises from the candidate list that would logically come next \
     (consider muscle group balance, fatigue, equipment already in use, and reasonable session length). \
     Respond with ONLY a JSON array, no markdown, no prose, in this exact shape:
@@ -100,7 +102,7 @@ def _extract_json_array(raw_text: str) -> list:
     if start == -1 or end < start:
         raise InvalidAiResponse("no JSON array found in model response")
     try:
-        parsed = json.loads(raw_text[start : end + 1])
+        parsed = json.loads(raw_text[start: end + 1])
     except json.JSONDecodeError as exc:
         raise InvalidAiResponse("model response was not valid JSON") from exc
     if not isinstance(parsed, list):
@@ -109,9 +111,9 @@ def _extract_json_array(raw_text: str) -> list:
 
 
 def parse_suggestion_response(
-    raw_text: str,
-    candidates: list[ExerciseDefinition],
-    max_suggestions: int = MAX_SUGGESTIONS,
+        raw_text: str,
+        candidates: list[ExerciseDefinition],
+        max_suggestions: int = MAX_SUGGESTIONS,
 ) -> list[Suggestion]:
     by_id = {c.id: c for c in candidates}
     seen: set[int] = set()
@@ -124,7 +126,7 @@ def parse_suggestion_response(
         if not isinstance(definition_id, int) or definition_id in seen:
             continue
         definition = by_id.get(definition_id)
-        if definition is None:      # model invented an id, or it was excluded
+        if definition is None:  # model invented an id, or it was excluded
             continue
         seen.add(definition_id)
         results.append(

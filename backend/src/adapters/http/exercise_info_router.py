@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlmodel.ext.asyncio import session
 
 from backend.src.adapters.http.dependencies import get_exercise_info_service
 from backend.src.adapters.response.exercise_info_response import (
@@ -23,7 +24,7 @@ router = APIRouter(
     "/exercise_definition/all",
     response_model=list[ExerciseDefinitionResponse],
 )
-def get_all_exercise_definition(
+def list_exercise_definition(
     service: ExerciseInfoService = Depends(get_exercise_info_service),
 ):
     return [
@@ -36,11 +37,11 @@ def get_all_exercise_definition(
     "/exercise/all",
     response_model=list[ExerciseWithWorkoutResponse],
 )
-def get_all_exercises(
+def list_exercises(
     service: ExerciseInfoService = Depends(get_exercise_info_service),
     user: User = Depends(get_current_user),
 ):
-    items = service.get_all_exercises_for_user(user_id=user.id)
+    items = service.list_exercises_for_user(user_id=user.id)
     return [_to_response(*item) for item in items]
 
 
@@ -66,12 +67,12 @@ def list_recent_exercises(
     "/exercise/since-monday",
     response_model=ExercisesSinceMondayResponse,
 )
-def get_exercises_since_monday(
+def list_exercises_since_monday(
     service: ExerciseInfoService = Depends(get_exercise_info_service),
     user: User = Depends(get_current_user),
 ):
-    items = service.get_exercises_since_monday(user_id=user.id)
-    emphasis_by_definition = service.get_muscle_emphasis_by_exercise_definition_id(items)
+    items = service.list_exercises_since_monday(user_id=user.id)
+    emphasis_by_definition = service.list_muscle_emphasis_by_definition_id(items)
     muscle_strain = service.compute_muscle_strain(items, emphasis_by_definition)
 
     return ExercisesSinceMondayResponse(
@@ -91,7 +92,7 @@ def get_exercises_since_monday(
     "/exercise/history/{exercise_definition_id}",
     response_model=list[ExerciseWithWorkoutResponse],
 )
-def get_last_exercises_for_definition(
+def list_exercises_for_definition_between(
     exercise_definition_id: int,
     limit: int = Query(
         default=3,
@@ -110,7 +111,7 @@ def get_last_exercises_for_definition(
     user: User = Depends(get_current_user),
 ):
     try:
-        items = service.list_exercises_for_definition(
+        items = service.list_last_exercises_for_exercise_definition(
             user_id=user.id,
             exercise_definition_id=exercise_definition_id,
             limit=limit,

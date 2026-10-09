@@ -18,28 +18,22 @@ from backend.src.services.exercise_info_service import ExerciseInfoService
 from backend.src.services.workout_session_service import WorkoutSessionService
 
 
-def get_exercise_definition_repository(
+def get_exercise_info_service(
     session: Session = Depends(get_database),
-) -> SqlExerciseDefinitionRepository:
-    return SqlExerciseDefinitionRepository(session)
-
+) -> ExerciseInfoService:
+    return ExerciseInfoService(
+        exercise_repository=SqlExerciseRepository(session),
+        exercise_definition_repository=SqlExerciseDefinitionRepository(session),
+    )
 
 def get_workout_session_service(
     session: Session = Depends(get_database),
 ) -> WorkoutSessionService:
     return WorkoutSessionService(
-        SqlWorkoutSessionRepository(session),
-        SqlExerciseDefinitionRepository(session),
+        workout_session_repository=SqlWorkoutSessionRepository(session),
+        exercise_info_service=get_exercise_info_service(session),
     )
 
-
-def get_exercise_info_service(
-    session: Session = Depends(get_database),
-) -> ExerciseInfoService:
-    return ExerciseInfoService(
-        SqlExerciseRepository(session),
-        SqlExerciseDefinitionRepository(session),
-    )
 
 
 @lru_cache
@@ -48,7 +42,7 @@ def get_text_generator() -> GeminiTextGenerator:
 
 
 def get_ai_suggestion_service(
-    definitions=Depends(get_exercise_definition_repository),
+    session: Session = Depends(get_database),
     generator: GeminiTextGenerator = Depends(get_text_generator),
 ) -> AiSuggestionService:
-    return AiSuggestionService(definitions, generator)
+    return AiSuggestionService(definitions=SqlExerciseDefinitionRepository(session), generator=generator)

@@ -1,13 +1,14 @@
 from datetime import datetime, time, timedelta, timezone
 from typing import Callable, Optional
 
+from backend.src.adapters.database.repositories.exercise_definition_repository import SqlExerciseDefinitionRepository
+from backend.src.adapters.database.repositories.exercise_repository import SqlExerciseRepository
 from backend.src.domain.entities.exercise_definition import ExerciseDefinition
 from backend.src.domain.entities.exercise import Exercise
 from backend.src.domain.enums import Muscle
+from backend.src.domain.errors import UnknownExerciseDefinition
 from backend.src.domain.muscle_strain import compute_muscle_strain as _compute_muscle_strain
-from backend.src.domain.repositories import ExerciseDefinitionRepository, ExerciseRepository
 from backend.src.domain.value_objects.muscle_emphasis import MuscleEmphasis
-
 
 HISTORY_WINDOW_DAYS = 60
 
@@ -24,40 +25,40 @@ def start_of_week(now: datetime) -> datetime:
 class ExerciseInfoService:
     def __init__(
         self,
-        exercises: ExerciseRepository,
-        exercise_definitions: ExerciseDefinitionRepository,
+        exercise_repository: SqlExerciseRepository,
+        exercise_definition_repository: SqlExerciseDefinitionRepository,
         clock: Callable[[], datetime] = _utcnow,
     ):
-        self._exercises = exercises
-        self._exercise_definitions = exercise_definitions
+        self._exercise_repository = exercise_repository
+        self._exercise_definition_repository = exercise_definition_repository
         self._clock = clock
 
 
-    def get_all_exercise_definitions(self) -> list[ExerciseDefinition]:
-        return self._exercise_definitions.list_all()
+    def list_exercise_definitions(self) -> list[ExerciseDefinition]:
+        return self._exercise_definition_repository.list_all()
 
 
-    def get_all_exercises_for_user(self, user_id: int) -> list[tuple[Exercise, Optional[datetime]]]:
-        return self._exercises.list_for_user(user_id)
+    def list_exercises_for_user(self, user_id: int) -> list[tuple[Exercise, Optional[datetime]]]:
+        return self._exercise_repository.list_for_user(user_id)
 
 
-    def get_exercises_since(self, user_id: int, days: int) -> list[tuple[Exercise, Optional[datetime]]]:
+    def list_exercises_since(self, user_id: int, days: int) -> list[tuple[Exercise, Optional[datetime]]]:
         now = self._clock()
-        return self._exercises.list_for_user_between(user_id, now - timedelta(days=days), now)
+        return self._exercise_repository.list_for_user_between(user_id, now - timedelta(days=days), now)
 
 
-    def get_exercises_since_monday(self, user_id: int) -> list[tuple[Exercise, Optional[datetime]]]:
+    def list_exercises_since_monday(self, user_id: int) -> list[tuple[Exercise, Optional[datetime]]]:
         now = self._clock()
-        return self._exercises.list_for_user_between(user_id, start_of_week(now), now)
+        return self._exercise_repository.list_for_user_between(user_id, start_of_week(now), now)
 
 
-    def get_muscle_emphasis_by_definition_id(
+    def list_muscle_emphasis_by_definition_id(
         self, items: list[tuple[Exercise, Optional[datetime]]]
     ) -> dict[int, list[MuscleEmphasis]]:
         ids = {exercise.exercise_definition_id for exercise, _ in items}
         if not ids:
             return {}
-        return self._exercise_definitions.get_muscle_emphasis(ids)
+        return self._exercise_definition_repository.get_muscle_emphasis(ids)
 
 
     def compute_muscle_strain(
@@ -68,7 +69,7 @@ class ExerciseInfoService:
         return _compute_muscle_strain([exercise for exercise, _ in items], emphasis_by_definition)
 
 
-    def get_last_exercises_for_definition(
+    def list_last_exercises_for_exercise_definition(
         self,
         user_id: int,
         exercise_definition_id: int,
@@ -78,7 +79,7 @@ class ExerciseInfoService:
         if limit < 1:
             raise ValueError("limit must be at least 1")
         now = self._clock()
-        return self._exercises.list_for_definition_between(
+        return self._exercise_repository.list_for_definition_between(
             user_id,
             exercise_definition_id,
             now - timedelta(days=HISTORY_WINDOW_DAYS),
@@ -86,3 +87,11 @@ class ExerciseInfoService:
             limit,
             exclude_workout_session_id,
         )
+
+    def ensure_exercise_definitions_exist(self, exercises: list[Exercise]) -> None:
+        ids = {ex.exercise_definition_id for ex in exercises}
+        if not ids:
+            return
+        missing = self._exercise_definition_repository.find_missing_ids(ids)
+        if missing:
+            raise UnknownExerciseDefinition(missing)

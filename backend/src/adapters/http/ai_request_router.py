@@ -1,16 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 from backend.src.adapters.dto.ai_request_dto import SuggestionOut, SuggestRequest
-from backend.src.adapters.http.dependencies import get_exercise_definition_repository, get_ai_suggestion_service
+from backend.src.adapters.http.dependencies import get_ai_suggestion_service
 from backend.src.adapters.http.mappers import logged_exercises_from_dto, suggestion_to_dto
-from backend.src.core.config import settings
 from backend.src.domain.errors import InvalidAiResponse, EmptyCurrentExercises, AiGenerationFailed
-from backend.src.services.ai_suggestion_service import (
-    build_suggestion_prompt,
-    get_suggestion_candidates,
-    parse_suggestion_response, AiSuggestionService,
-)
+from backend.src.services.ai_suggestion_service import  AiSuggestionService
+
 
 router = APIRouter(prefix="/exercise_info", tags=["exercise_info"])
 
