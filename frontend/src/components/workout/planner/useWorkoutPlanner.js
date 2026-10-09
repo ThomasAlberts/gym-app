@@ -66,7 +66,7 @@ export default function useWorkoutPlanner(planId) {
       try {
         const [{ data }, defsRes] = await Promise.all([
           api.get(`/workout/${planId}`),
-          api.get(`/exercise_info/exercise_definition/all`),
+          api.get(`/exercise_definition/all`),
         ]);
         if (cancelled) return;
         const defsById = new Map((defsRes.data || []).map((d) => [d.id, d]));

@@ -7,10 +7,10 @@ from backend.src.domain.errors import InvalidAiResponse, EmptyCurrentExercises, 
 from backend.src.services.ai_suggestion_service import  AiSuggestionService
 
 
-router = APIRouter(prefix="/exercise_info", tags=["exercise_info"])
+router = APIRouter(prefix="/workout", tags=["workout"])
 
 
-@router.post("/exercise/suggest", response_model=list[SuggestionOut])
+@router.post("/suggest_exercise", response_model=list[SuggestionOut])
 def suggest_exercise(
     payload: SuggestRequest,
     service: AiSuggestionService = Depends(get_ai_suggestion_service),

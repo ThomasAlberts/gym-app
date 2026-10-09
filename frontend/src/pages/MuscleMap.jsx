@@ -120,7 +120,7 @@ export default function MuscleMap() {
       setLoading(true);
       setError(null);
       try {
-        const res = await api.get("/exercise_info/exercise/since-monday");
+        const res = await api.get("/exercise/since-monday");
         if (cancelled) return;
         console.log(res)
         setLeafStrain(res.data?.muscle_strain || {});

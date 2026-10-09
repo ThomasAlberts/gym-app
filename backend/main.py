@@ -9,9 +9,11 @@ from backend.src.adapters.database.seed import seed_domain_data
 from backend.src.core.config import settings
 
 from backend.src.adapters.http.workout_session_router import router as workout_router
-from backend.src.adapters.http.exercise_info_router import router as exercise_info_router
+from backend.src.adapters.http.exercise_router import router as exercise_router
+from backend.src.adapters.http.exercise_definition_router import router as exercise_definition_router
 from backend.src.adapters.http.ai_request_router import router as ai_request_router
 from backend.src.adapters.auth.auth_router import router as auth_router
+
 
 # Domain models
 
@@ -43,9 +45,10 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-app.include_router(workout_router)
-app.include_router(exercise_info_router)
 app.include_router(auth_router)
+app.include_router(workout_router)
+app.include_router(exercise_definition_router)
+app.include_router(exercise_router)
 app.include_router(ai_request_router)
 
 

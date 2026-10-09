@@ -27,7 +27,7 @@ export default function SuggestExercise({ exercises, onAdd }) {
     setError(null);
     try {
       const res = await api.post(
-        "/exercise_info/exercise/suggest",
+        "/workout/suggest_exercise",
         buildPayload(exercises)
       );
       setSuggestions(res.data || []);

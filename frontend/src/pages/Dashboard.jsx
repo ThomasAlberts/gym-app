@@ -19,9 +19,9 @@ export default function Dashboard() {
     try {
       const [workoutsRes, allExRes, defsRes] = await Promise.all([
         api.get("/workout/all"),
-        api.get("/exercise_info/exercise/all"),
+        api.get("/exercise/all"),
         // todo: je wilt niet alle bestaande ophalen om de namen van je exercise te setten.
-        api.get("/exercise_info/exercise_definition/all"),
+        api.get("/exercise_definition/all"),
       ]);
       setWorkouts(workoutsRes.data);
       setAllExercises(allExRes.data);

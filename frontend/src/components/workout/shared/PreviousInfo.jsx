@@ -42,7 +42,7 @@ export default function PreviousInfo({
       setError(null);
       try {
         const response = await api.get(
-          `/exercise_info/exercise/history/${exerciseDefinitionId}`,
+          `/exercise/history/${exerciseDefinitionId}`,
           {
             params: {
               limit,

@@ -15,26 +15,13 @@ from backend.src.services.exercise_info_service import ExerciseInfoService
 
 
 router = APIRouter(
-    prefix="/exercise_info",
-    tags=["exercise_info"],
+    prefix="/exercise",
+    tags=["exercise"],
 )
 
 
 @router.get(
-    "/exercise_definition/all",
-    response_model=list[ExerciseDefinitionResponse],
-)
-def list_exercise_definition(
-    service: ExerciseInfoService = Depends(get_exercise_info_service),
-):
-    return [
-        ExerciseDefinitionResponse.model_validate(definition, from_attributes=True)
-        for definition in service.list_exercise_definitions()
-    ]
-
-
-@router.get(
-    "/exercise/all",
+    "/all",
     response_model=list[ExerciseWithWorkoutResponse],
 )
 def list_exercises(
@@ -46,7 +33,7 @@ def list_exercises(
 
 
 @router.get(
-    "/exercise/recent",
+    "/recent",
     response_model=list[ExerciseWithWorkoutResponse],
 )
 def list_recent_exercises(
@@ -64,7 +51,7 @@ def list_recent_exercises(
 
 
 @router.get(
-    "/exercise/since-monday",
+    "/since-monday",
     response_model=ExercisesSinceMondayResponse,
 )
 def list_exercises_since_monday(
@@ -89,7 +76,7 @@ def list_exercises_since_monday(
 
 
 @router.get(
-    "/exercise/history/{exercise_definition_id}",
+    "/history/{exercise_definition_id}",
     response_model=list[ExerciseWithWorkoutResponse],
 )
 def list_exercises_for_definition_between(
