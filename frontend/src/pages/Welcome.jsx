@@ -35,6 +35,7 @@ const knownIssues = [
   {
     title: "Verbeteringen",
     items: [
+      "Onderzoek prompt injecties en toepassen",
       "De navbar aanpassen en aanvullen (eerst afstemmen met Anek)",
       "De notes bij een oefening anders tonen, de huidige weergave is onhandig",
       "Het dashboard aanpassen of samenvoegen met het profiel",
@@ -92,7 +93,7 @@ export default function Welcome() {
         <p>
           De styling staat op de allerlaatste plaats van mijn prioriteitenlijst,
           en eerlijk gezegd mis ik op dat vlak ook de ambitie. De app is
-          functioneel, niet mooi. Dat is een bewuste keuze, geen ongelukje.
+          functioneel, niet mooi.
         </p>
       </section>
 
